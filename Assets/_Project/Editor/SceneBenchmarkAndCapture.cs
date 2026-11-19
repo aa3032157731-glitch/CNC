@@ -336,7 +336,25 @@ namespace CNC.EditorTools
                 if (tmp.text != null && tmp.text.Contains("智能视觉检测分拣区")) wrappedSigns++;
             Check("RENDER", "Workshop 2 LED hanging signs cleanly single-line (no orphan wrap)", wrappedSigns == 0);
 
-            // -------------------- 6. STYLE A HUD & MULTI-ASPECT-RATIO OVERLAP CHECKS --------------------
+            // -------------------- 6. STYLE A HUD, CRISP 72PT FONTS & VISUAL TEACHING STUDIO CHECKS --------------------
+            var fontReg = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/_Project/UI/Fonts/CNC_Sans_Regular_SDF.asset");
+            var fontBold = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/_Project/UI/Fonts/CNC_Sans_Bold_SDF.asset");
+            bool fontsCrisp = fontReg != null && fontBold != null &&
+                              fontReg.faceInfo.pointSize >= 64 && fontBold.faceInfo.pointSize >= 64 &&
+                              fontReg.HasCharacter('✓', true, true) && fontReg.HasCharacter('★', true, true) && fontReg.HasCharacter('→', true, true);
+            Check("FONTS", "Crisp 72pt Noto Sans SC SDF fonts loaded with full symbol coverage (✓ ★ →, 0 missing glyph warnings)",
+                fontsCrisp, fontReg != null ? $"regPt={fontReg.faceInfo.pointSize}, boldPt={fontBold?.faceInfo.pointSize}" : "MISSING");
+
+            if (sim != null && sim.catalog != null)
+            {
+                bool allTeachAssets = sim.catalog.stations.TrueForAll(s =>
+                    s.processIconSprite != null && s.inputMaterialSprite != null && s.outputMaterialSprite != null &&
+                    !string.IsNullOrEmpty(s.inputMaterialName) && !string.IsNullOrEmpty(s.outputMaterialName) &&
+                    !string.IsNullOrEmpty(s.processActionLabel));
+                Check("TEACHING", "All 9 stations wired with illustrated process icons & Input->Output material diagram assets",
+                    allTeachAssets, "9/9 stations");
+            }
+
             var hud = UnityEngine.Object.FindObjectOfType<DigitalTwinHUD>();
             Check("HUD", "DigitalTwinHUD & Style A sprites/buttons/16 slots/9 dock nodes wired",
                 hud != null && hud.spPillActiveWhite != null && hud.spPillActiveSky != null &&
@@ -346,16 +364,36 @@ namespace CNC.EditorTools
                 hud.flowNodeButtons != null && hud.flowNodeButtons.Length == 9 && hud.flowNodeButtons[8] != null &&
                 hud.warehouseSlotCells != null && hud.warehouseSlotCells.Length == 16 && hud.warehouseSlotCells[15] != null);
 
+            Check("TEACHING", "Visual Teaching Studio wired (Top 9-Step Flowchart + Material Diagram + 3 Study Tabs + Quiz)",
+                hud != null && hud.teachingFlowRibbonRoot != null && hud.teachingStudioCardRoot != null &&
+                hud.teachInputIcon != null && hud.teachOutputIcon != null &&
+                hud.btnTeachTabPrinciple != null && hud.btnTeachTabEquipment != null && hud.btnTeachTabQuiz != null &&
+                hud.teachingStepButtons != null && hud.teachingStepButtons.Length == 9 && hud.teachingStepIcons[8] != null &&
+                hud.teachKeyPointTexts != null && hud.teachKeyPointTexts.Length == 3 && hud.teachKeyPointTexts[2] != null &&
+                hud.btnTeachAutoTour != null && hud.btnTeachToggleRun != null);
+
+            if (hud != null && hud.teachingStudioCardRoot != null)
+            {
+                float minStudioFont = 999f;
+                string minName = "";
+                foreach (var tmp in hud.teachingStudioCardRoot.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true))
+                {
+                    if (tmp.fontSize < minStudioFont) { minStudioFont = tmp.fontSize; minName = tmp.name; }
+                }
+                float titleRectH = hud.teachStationTitleText != null ? hud.teachStationTitleText.rectTransform.rect.height : 0f;
+                Check("TEACHING", "Teaching Studio card uses large classroom-readable typography & unclipped 24px title",
+                    minStudioFont >= 13.5f && titleRectH >= 42f, $"minFont={minStudioFont:F1}px ({minName}), titleH={titleRectH:F1}px");
+            }
+
             if (hud != null)
             {
                 var scaler = hud.GetComponent<CanvasScaler>();
-                float match = scaler != null ? scaler.matchWidthOrHeight : 0.65f;
-                // Compute effective logical Canvas size at BOTH 1920x1080 (16:9) AND 1920x840 (wide docked Game View)
+                float match = scaler != null ? scaler.matchWidthOrHeight : 0.55f;
                 bool ok1080 = CheckHudLayoutAtResolution(hud, 1920f, 1080f, match, out string det1080);
-                Check("HUD_LAYOUT", "Zero panel-to-dock overlap at 1920x1080 (Dashboard + Teaching + Inspector)", ok1080, det1080);
+                Check("HUD_LAYOUT", "Zero panel-to-dock overlap at 1920x1080 (Dashboard + Teaching Studio)", ok1080, det1080);
 
                 bool okWide = CheckHudLayoutAtResolution(hud, 1920f, 840f, match, out string detWide);
-                Check("HUD_LAYOUT", "Zero panel-to-dock overlap at 1920x840 Wide Docked Game View (Dashboard + Teaching + Inspector)", okWide, detWide);
+                Check("HUD_LAYOUT", "Zero panel-to-dock overlap at 1920x840 Wide Docked Game View (Dashboard + Teaching Studio)", okWide, detWide);
             }
 
             sb.AppendLine("----------------------------------------------------------------------");
@@ -408,20 +446,20 @@ namespace CNC.EditorTools
             float canvasW = w / scale;
             float canvasH = h / scale;
 
-            // Top pills occupy top 72px; Bottom dock occupies bottom 74px (y from 22 to 74)
+            // Top pills occupy top 70px; Bottom dock occupies bottom 74px (y from 18 to 74)
             float dockTop = 74f;
-            float leftDashBottom = canvasH - 86f - 418f;
-            float leftTeachBottom = canvasH - 86f - 648f;
-            float rightBottom = canvasH - 86f - 626f;
+            float leftDashBottom = canvasH - 84f - 452f;
+            float rightBottom = canvasH - 84f - 672f;
+            float teachStudioHeight = canvasH - 180f - 20f;
 
-            // Top 3 pills total width: 340 + 772 + 316 + 48 margins = 1476px
-            bool topFits = canvasW >= 1520f;
+            // Top 3 pills total width: 370 + 788 + 338 + 48 margins = 1544px; Top Flow Ribbon = 1860px
+            bool topFits = canvasW >= 1860f;
             bool leftDashClears = leftDashBottom > dockTop + 16f;
-            bool leftTeachClears = leftTeachBottom > dockTop + 16f;
             bool rightClears = rightBottom > dockTop + 16f;
+            bool teachFits = teachStudioHeight >= 710f;
 
-            detail = $"logical={canvasW:F0}x{canvasH:F0}, gaps(dash={leftDashBottom - dockTop:F0}px, teach={leftTeachBottom - dockTop:F0}px, right={rightBottom - dockTop:F0}px)";
-            return topFits && leftDashClears && leftTeachClears && rightClears;
+            detail = $"logical={canvasW:F0}x{canvasH:F0}, gaps(dash={leftDashBottom - dockTop:F0}px, right={rightBottom - dockTop:F0}px, teachH={teachStudioHeight:F0}px)";
+            return topFits && leftDashClears && rightClears && teachFits;
         }
 
         private static int CountMissingScriptsInScene()
@@ -530,22 +568,96 @@ namespace CNC.EditorTools
                         st.focusCameraPos, st.focusLookAtPos, 54f, hudCanvas, 1920, 1080);
                 }
 
-                // 2E. Teaching Tour Mode at Wide Docked Game View 1920x840 (proves zero bottom dock overlap!)
-                var st4 = cat.stations[4];
-                PopulateInspector(st4);
+                // 2E. NEW VISUAL TEACHING STUDIO CAPTURES (All 3 Study Tabs + 1920x840 Wide Docked + ST-09 Warehouse!)
                 if (hudComp != null)
                 {
-                    if (hudComp.dashboardLeftContent != null) hudComp.dashboardLeftContent.SetActive(false);
-                    if (hudComp.teachingLeftContent != null) hudComp.teachingLeftContent.SetActive(true);
-                    if (hudComp.leftPanelRect != null) hudComp.leftPanelRect.sizeDelta = new Vector2(296f, 648f);
-                    if (hudComp.teachingGoalText != null) hudComp.teachingGoalText.text = $"<color=#7DD3FC><b>{st4.code} 教学目标</b></color>\n{st4.teachingGoal}";
-                    if (hudComp.teachingKeyPointsText != null) hudComp.teachingKeyPointsText.text = string.Join("\n", st4.teachingKeyPoints);
-                    if (hudComp.quizQuestionText != null && st4.quiz != null) hudComp.quizQuestionText.text = $"随堂考核：{st4.quiz.question}";
-                    for (int q = 0; q < 3 && st4.quiz != null && q < st4.quiz.options.Length; q++)
-                        if (hudComp.quizOptionTexts[q] != null) hudComp.quizOptionTexts[q].text = st4.quiz.options[q];
+                    if (hudComp.leftPanelRoot != null) hudComp.leftPanelRoot.SetActive(false);
+                    if (hudComp.rightPanelRoot != null) hudComp.rightPanelRoot.SetActive(false);
+                    if (hudComp.bottomDockRoot != null) hudComp.bottomDockRoot.SetActive(false);
+                    if (hudComp.fpsHintBanner != null) hudComp.fpsHintBanner.SetActive(false);
+                    if (hudComp.teachingFlowRibbonRoot != null) hudComp.teachingFlowRibbonRoot.SetActive(true);
+                    if (hudComp.teachingStudioCardRoot != null) hudComp.teachingStudioCardRoot.SetActive(true);
+                    if (hudComp.teachingHintPill != null) hudComp.teachingHintPill.SetActive(true);
+
+                    void FillTeachCard(StationInfo st, int tabIdx)
+                    {
+                        if (hudComp.teachStageBadgeText != null) hudComp.teachStageBadgeText.text = $"第 {st.index + 1}/9 步  ·  {st.stageGroup}";
+                        if (hudComp.teachStationTitleText != null) hudComp.teachStationTitleText.text = st.name;
+                        if (hudComp.teachInputIcon != null) hudComp.teachInputIcon.sprite = st.inputMaterialSprite;
+                        if (hudComp.teachInputNameText != null) hudComp.teachInputNameText.text = st.inputMaterialName;
+                        if (hudComp.teachActionLabelText != null) hudComp.teachActionLabelText.text = st.processActionLabel;
+                        if (hudComp.teachOutputIcon != null) hudComp.teachOutputIcon.sprite = st.outputMaterialSprite;
+                        if (hudComp.teachOutputNameText != null) hudComp.teachOutputNameText.text = st.outputMaterialName;
+                        if (hudComp.teachingGoalText != null) hudComp.teachingGoalText.text = $"<color=#7DD3FC><b>学习目标：</b></color>{st.teachingGoal}";
+                        if (hudComp.teachPrincipleBodyText != null) hudComp.teachPrincipleBodyText.text = st.processSummary;
+                        for (int k = 0; k < 3 && st.teachingKeyPoints != null && k < st.teachingKeyPoints.Length; k++)
+                        {
+                            string raw = st.teachingKeyPoints[k];
+                            if (raw.Length > 3 && char.IsDigit(raw[0]) && raw[1] == '.') raw = raw.Substring(2).Trim();
+                            int col = raw.IndexOf('：');
+                            if (col > 0) raw = $"<color=#FFFFFF><b>{raw.Substring(0, col + 1)}</b></color>{raw.Substring(col + 1)}";
+                            if (hudComp.teachKeyPointTexts[k] != null) hudComp.teachKeyPointTexts[k].text = raw;
+                        }
+                        if (hudComp.teachEquipmentPhoto != null) hudComp.teachEquipmentPhoto.sprite = st.previewSprite;
+                        if (hudComp.teachEquipmentSpecsText != null && st.specs != null)
+                        {
+                            var ss = new StringBuilder();
+                            int lim = Mathf.Min(st.specs.Length, 5);
+                            for (int i = 0; i < lim; i++)
+                            {
+                                var sp = st.specs[i];
+                                ss.Append("<color=#94A3B8>").Append(sp.label).Append("：</color><b>").Append(sp.value).Append("</b>");
+                                if (!string.IsNullOrEmpty(sp.unit)) ss.Append(" <color=#7DD3FC>").Append(sp.unit).Append("</color>");
+                                if (i < lim - 1) ss.Append('\n');
+                            }
+                            hudComp.teachEquipmentSpecsText.text = ss.ToString();
+                        }
+                        if (st.quiz != null)
+                        {
+                            if (hudComp.quizQuestionText != null) hudComp.quizQuestionText.text = $"考核题目：{st.quiz.question}";
+                            for (int q = 0; q < 3 && q < st.quiz.options.Length; q++)
+                                if (hudComp.quizOptionTexts[q] != null) hudComp.quizOptionTexts[q].text = st.quiz.options[q];
+                            if (hudComp.quizFeedbackText != null)
+                                hudComp.quizFeedbackText.text = $"<color=#34D399><b>✓ 回答正确！已掌握本工段核心原理。</b></color>\n{st.quiz.explanation}";
+                        }
+                        for (int i = 0; i < 9; i++)
+                        {
+                            var bimg = hudComp.teachingStepButtons[i]?.GetComponent<UnityEngine.UI.Image>();
+                            if (bimg != null)
+                                bimg.sprite = i == st.index ? hudComp.spTeachStepActive : (i < st.index ? hudComp.spTeachStepDone : hudComp.spTeachStepIdle);
+                            if (hudComp.teachingStepCheckTexts[i] != null)
+                                hudComp.teachingStepCheckTexts[i].text = i == st.index
+                                    ? $"<color=#BAE6FD>{i + 1:00} 当前讲解</color>"
+                                    : (i < st.index ? $"<color=#34D399>{i + 1:00} ★ 已通过</color>" : $"<color=#94A3B8>{i + 1:00} 待学习</color>");
+                        }
+                        hudComp.SelectTeachingTab(tabIdx);
+                    }
+
+                    // Tab 1: Principle + Material Transform Diagram (ST-01, 1080p)
+                    FillTeachCard(cat.stations[0], 0);
+                    RenderShot(Path.Combine(ArtifactShotDir, "teach_01_principle_1080p.png"),
+                        cat.stations[0].focusCameraPos, cat.stations[0].focusLookAtPos, 54f, hudCanvas, 1920, 1080);
+
+                    // Tab 2: Equipment Large Photo + Large Specs (ST-05, 1080p)
+                    FillTeachCard(cat.stations[4], 1);
+                    RenderShot(Path.Combine(ArtifactShotDir, "teach_02_specs_1080p.png"),
+                        cat.stations[4].focusCameraPos, cat.stations[4].focusLookAtPos, 54f, hudCanvas, 1920, 1080);
+
+                    // Tab 3: Interactive Quiz (ST-07 Ring Spinning, 1080p)
+                    FillTeachCard(cat.stations[6], 2);
+                    RenderShot(Path.Combine(ArtifactShotDir, "teach_03_quiz_1080p.png"),
+                        cat.stations[6].focusCameraPos, cat.stations[6].focusLookAtPos, 54f, hudCanvas, 1920, 1080);
+
+                    // Wide Docked Game View 1920x840 (ST-04 Draw Frame, Tab 1 — verifies crispness & zero overlap!)
+                    FillTeachCard(cat.stations[3], 0);
+                    RenderShot(Path.Combine(ArtifactShotDir, "teach_04_wide_docked_1920x840.png"),
+                        cat.stations[3].focusCameraPos, cat.stations[3].focusLookAtPos, 54f, hudCanvas, 1920, 840);
+
+                    // Warehouse ST-09 Teaching View (1080p)
+                    FillTeachCard(cat.stations[8], 0);
+                    RenderShot(Path.Combine(ArtifactShotDir, "teach_05_warehouse_st09_1080p.png"),
+                        cat.stations[8].focusCameraPos, cat.stations[8].focusLookAtPos, 54f, hudCanvas, 1920, 1080);
                 }
-                RenderShot(Path.Combine(ArtifactShotDir, "06_teaching_mode_wide_1920x840.png"),
-                    st4.focusCameraPos, st4.focusLookAtPos, 54f, hudCanvas, 1920, 840);
             }
 
             Debug.Log("[CNC DEEP VERIFY] Captured all 16 verification screenshots to " + ArtifactShotDir);

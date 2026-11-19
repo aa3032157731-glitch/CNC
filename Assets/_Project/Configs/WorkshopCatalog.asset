@@ -54,6 +54,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u201C\u52E4\u6293\u5C11\u6293\u201D\u53EF\u51CF\u5C0F\u6293\u53D6\u68C9\u675F\u8D28\u91CF\uFF0C\u663E\u8457\u63D0\u9AD8\u5F00\u677E\u5EA6\uFF0C\u4E3A\u540E\u7EED\u9664\u6742\u4E0E\u68B3\u68C9\u6253\u597D\u57FA\u7840\u3002"
     previewSprite: {fileID: 21300000, guid: 8e3e08e5b6df12440ac8102f434cf256, type: 3}
     previewSpritePath: Assets/Fanyi/R-C (2).jpg
+    stageGroup: "\u6E05\u82B1\u5F00\u677E\u9636\u6BB5"
+    inputMaterialName: "\u7D27\u538B\u539F\u68C9\u5305"
+    processActionLabel: "\u5F80\u590D\u6293\u68C9 \xB7 \u7CBE\u7EC6\u5F00\u677E"
+    outputMaterialName: "\u677E\u6563\u5747\u5300\u68C9\u675F"
+    processIconSprite: {fileID: 21300000, guid: f23f57990cac2874e99d49f8af557ed2, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_01.png
+    inputMaterialSprite: {fileID: 21300000, guid: 2362a08807d628f4aa843285b47bfd3d, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_00_bale.png
+    outputMaterialSprite: {fileID: 21300000, guid: 1bb756e370053b847bd49963d0eb0875, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_01_flocks.png
     worldPosition: {x: 172.6, y: 6, z: 118}
     focusCameraPos: {x: 204, y: 15, z: 146}
     focusLookAtPos: {x: 168, y: 5.5, z: 114}
@@ -102,6 +112,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u5927\u6742\u8D28\u4E00\u65E6\u88AB\u9AD8\u901F\u6253\u624B\u51FB\u788E\uFF0C\u6781\u6613\u7C98\u9644\u4E8E\u7EA4\u7EF4\u5F62\u6210\u75B5\u70B9\uFF0C\u540E\u7EED\u68B3\u68C9\u4E0E\u7CBE\u68B3\u6781\u96BE\u5F7B\u5E95\u6E05\u9664\u3002"
     previewSprite: {fileID: 21300000, guid: 371e2b691af8b52429ac108b1f7bed87, type: 3}
     previewSpritePath: Assets/Fanyi/R-C (3).jpg
+    stageGroup: "\u6E05\u82B1\u5F00\u677E\u9636\u6BB5"
+    inputMaterialName: "\u542B\u6742\u539F\u68C9\u675F"
+    processActionLabel: "\u79BB\u5FC3\u6C14\u6D41 \xB7 \u9010\u7EA7\u9664\u6742"
+    outputMaterialName: "\u6D01\u51C0\u68C9\u7EA4\u7EF4\u6D41"
+    processIconSprite: {fileID: 21300000, guid: ffbc2a1bf4ae00a4caf87880410ca6bd, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_02.png
+    inputMaterialSprite: {fileID: 21300000, guid: 1bb756e370053b847bd49963d0eb0875, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_01_flocks.png
+    outputMaterialSprite: {fileID: 21300000, guid: a2b216d0c2079674a87d83b7704a0edd, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_02_clean.png
     worldPosition: {x: 137.5, y: 7.2, z: 30.5}
     focusCameraPos: {x: 165, y: 15, z: 54}
     focusLookAtPos: {x: 132, y: 6.2, z: 25}
@@ -151,6 +171,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u68B3\u68C9\u5DE5\u5E8F\u76F4\u63A5\u51B3\u5B9A\u4E86\u7EA4\u7EF4\u5206\u79BB\u5EA6\u3001\u68C9\u7ED3\u6570\u91CF\u4E0E\u751F\u6761\u5747\u5300\u5EA6\uFF0C\u5BF9\u6700\u7EC8\u6210\u7EB1\u8D28\u91CF\u5F71\u54CD\u6700\u5927\u3002"
     previewSprite: {fileID: 21300000, guid: 371e2b691af8b52429ac108b1f7bed87, type: 3}
     previewSpritePath: Assets/Fanyi/R-C (3).jpg
+    stageGroup: "\u68B3\u7406\u6210\u6761\u9636\u6BB5"
+    inputMaterialName: "\u6D01\u51C0\u68C9\u7EA4\u7EF4\u6D41"
+    processActionLabel: "\u9521\u6797\u76D6\u677F \xB7 \u5355\u7EA4\u5206\u68B3"
+    outputMaterialName: "\u5747\u5300\u68B3\u68C9\u751F\u6761"
+    processIconSprite: {fileID: 21300000, guid: 607782be5b5690846ba3f1f2b5727d8e, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_03.png
+    inputMaterialSprite: {fileID: 21300000, guid: a2b216d0c2079674a87d83b7704a0edd, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_02_clean.png
+    outputMaterialSprite: {fileID: 21300000, guid: 632d14c25473e2049b65070cb6d523af, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_03_card_sliver.png
     worldPosition: {x: 134.2, y: 7, z: 69.5}
     focusCameraPos: {x: 166, y: 16, z: 96}
     focusLookAtPos: {x: 132, y: 6.5, z: 64}
@@ -201,6 +231,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u5E76\u6761\u5DE5\u5E8F\u901A\u8FC7\u201C\u5E76\u5408+\u7275\u4F38+\u81EA\u8C03\u5300\u6574\u201D\u4E09\u534F\u540C\uFF0C\u6838\u5FC3\u89E3\u51B3\u68C9\u6761\u5747\u5300\u5EA6\u4E0E\u7EA4\u7EF4\u987A\u76F4\u5EA6\u95EE\u9898\u3002"
     previewSprite: {fileID: 21300000, guid: d67b537519d0679469f2842604a6fcb6, type: 3}
     previewSpritePath: Assets/Fanyi/c5fa63cfccfce28eff817b3b0561815.jpg
+    stageGroup: "\u5E76\u5408\u7CBE\u68B3\u9636\u6BB5"
+    inputMaterialName: "6~8 \u6839\u68B3\u68C9\u751F\u6761"
+    processActionLabel: "\u5E76\u5408\u7275\u4F38 \xB7 \u81EA\u8C03\u5300\u6574"
+    outputMaterialName: "\u987A\u76F4\u5747\u5300\u719F\u6761"
+    processIconSprite: {fileID: 21300000, guid: f0f34c31afcf5e346ac986f828728a82, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_04.png
+    inputMaterialSprite: {fileID: 21300000, guid: 632d14c25473e2049b65070cb6d523af, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_03_card_sliver.png
+    outputMaterialSprite: {fileID: 21300000, guid: 154962f1898d47a4b834862eeed02d31, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_04_draw_sliver.png
     worldPosition: {x: 123.3, y: 6, z: 114}
     focusCameraPos: {x: 152, y: 14, z: 134}
     focusLookAtPos: {x: 123.3, y: 5.2, z: 108}
@@ -249,6 +289,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7CBE\u68B3\u673A\u901A\u8FC7\u5254\u9664\u77ED\u7EA4\u7EF4\u4E0E\u68C9\u7ED3\uFF0C\u4F7F\u7EA4\u7EF4\u9AD8\u5EA6\u987A\u76F4\u6574\u9F50\uFF0C\u662F\u751F\u4EA7\u9AD8\u652F\u9AD8\u5BC6\u9762\u6599\u7EB1\u7EBF\u7684\u5FC5\u5907\u5DE5\u827A\u3002"
     previewSprite: {fileID: 21300000, guid: 469ea73e88e22274bb07344f809b93e4, type: 3}
     previewSpritePath: Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg
+    stageGroup: "\u5E76\u5408\u7CBE\u68B3\u9636\u6BB5"
+    inputMaterialName: "\u5747\u5300\u5E76\u6761\u68C9\u5377"
+    processActionLabel: "\u7CBE\u5BC6\u5254\u77ED \xB7 \u6DF1\u5EA6\u9664\u7ED3"
+    outputMaterialName: "\u9AD8\u9F50\u5EA6\u7CBE\u68B3\u6761"
+    processIconSprite: {fileID: 21300000, guid: 2f7152112f7fbe04c978c2d27149508f, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_05.png
+    inputMaterialSprite: {fileID: 21300000, guid: 154962f1898d47a4b834862eeed02d31, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_04_draw_sliver.png
+    outputMaterialSprite: {fileID: 21300000, guid: 0c81bc3fde321584886d189969b20714, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_05_combed.png
     worldPosition: {x: 47.3, y: 7, z: 194}
     focusCameraPos: {x: 62, y: 14.5, z: 246}
     focusLookAtPos: {x: 36, y: 7, z: 194}
@@ -298,6 +348,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7C97\u7EB1\u637B\u5EA6\u53EA\u9700\u6EE1\u8DB3\u5377\u7ED5\u3001\u642C\u8FD0\u548C\u7EC6\u7EB1\u9000\u7ED5\u4E0D\u65AD\u5934\u5373\u53EF\uFF0C\u8FC7\u5927\u637B\u5EA6\u4F1A\u589E\u52A0\u7EC6\u7EB1\u7275\u4F38\u963B\u529B\u5BFC\u81F4\u51FA\u786C\u5934\u6216\u6761\u5E72\u6076\u5316\u3002"
     previewSprite: {fileID: 21300000, guid: 0b71b6aae3b9db049b43ee246274fada, type: 3}
     previewSpritePath: Assets/Fanyi/b6a4d20db8528f753f21003231b6934.jpg
+    stageGroup: "\u7275\u4F38\u7EBA\u7EB1\u9636\u6BB5"
+    inputMaterialName: "\u9AD8\u9F50\u5EA6\u7CBE\u68B3\u6761"
+    processActionLabel: "\u62BD\u7EC6\u52A0\u637B \xB7 \u952D\u7FFC\u5377\u7ED5"
+    outputMaterialName: "\u5F31\u637B\u5927\u5377\u7C97\u7EB1"
+    processIconSprite: {fileID: 21300000, guid: 67f01cb09d19db54bb992e650b666a0b, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_06.png
+    inputMaterialSprite: {fileID: 21300000, guid: 0c81bc3fde321584886d189969b20714, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_05_combed.png
+    outputMaterialSprite: {fileID: 21300000, guid: e73460805319a51489ee186a13a15b06, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_06_roving.png
     worldPosition: {x: 45.9, y: 9, z: 132}
     focusCameraPos: {x: 84, y: 16.5, z: 162}
     focusLookAtPos: {x: 45.9, y: 8.5, z: 130}
@@ -349,6 +409,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7EC6\u7EB1\u673A\u4F9D\u9760\u9AD8\u901F\u65CB\u8F6C\u7684\u952D\u5B50\u5E26\u52A8\u7EB1\u7EBF\u62C9\u52A8\u94A2\u4E1D\u5708\u6CBF\u94A2\u9886\u6ED1\u52A8\uFF0C\u4E24\u8005\u8F6C\u901F\u5DEE\u5B9E\u73B0\u5377\u7ED5\uFF0C\u65CB\u8F6C\u4E00\u5468\u52A0\u4E0A\u4E00\u4E2A\u637B\u56DE\u3002"
     previewSprite: {fileID: 21300000, guid: 469ea73e88e22274bb07344f809b93e4, type: 3}
     previewSpritePath: Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg
+    stageGroup: "\u7275\u4F38\u7EBA\u7EB1\u9636\u6BB5"
+    inputMaterialName: "\u5F31\u637B\u5927\u5377\u7C97\u7EB1"
+    processActionLabel: "\u5927\u500D\u7275\u4F38 \xB7 \u9AD8\u901F\u771F\u637B"
+    outputMaterialName: "\u9AD8\u5F3A\u7EC6\u7EB1\u7BA1\u7EB1"
+    processIconSprite: {fileID: 21300000, guid: 9dd2d4c4c5551e54197ffa249f1e3026, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_07.png
+    inputMaterialSprite: {fileID: 21300000, guid: e73460805319a51489ee186a13a15b06, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_06_roving.png
+    outputMaterialSprite: {fileID: 21300000, guid: 8cbf306456b60764c939c4ecb9b8b0b4, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_07_cop.png
     worldPosition: {x: -16.2, y: 10, z: 130}
     focusCameraPos: {x: 18, y: 16, z: 158}
     focusLookAtPos: {x: -16.2, y: 9.5, z: 128}
@@ -398,6 +468,16 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7EDC\u7B52\u65E2\u662F\u7EBA\u7EB1\u54C1\u8D28\u7684\u6700\u540E\u628A\u5173\uFF08\u7535\u5B50\u6E05\u7EB1\uFF09\uFF0C\u53C8\u662F\u6EE1\u8DB3\u9AD8\u901F\u6574\u7ECF/\u7EC7\u9020\u5927\u5377\u88C5\u8FDE\u7EED\u9000\u7ED5\u7684\u57FA\u7840\u3002"
     previewSprite: {fileID: 21300000, guid: 6c4f2e18d5b46904bbc0132f35a6d726, type: 3}
     previewSpritePath: Assets/Fanyi/1cb8be29d30766661488f22f213bb84.jpg
+    stageGroup: "\u6E05\u7EB1\u7EDC\u7B52\u9636\u6BB5"
+    inputMaterialName: "\u591A\u652F\u7EC6\u7EB1\u7BA1\u7EB1"
+    processActionLabel: "\u7535\u5B50\u6E05\u7EB1 \xB7 \u65E0\u7ED3\u7EDC\u7B52"
+    outputMaterialName: "\u65E0\u75B5\u5927\u7B52\u5B50\u7EB1"
+    processIconSprite: {fileID: 21300000, guid: b3b2790f8af0dfb48a8532fe4c0dd600, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_08.png
+    inputMaterialSprite: {fileID: 21300000, guid: 8cbf306456b60764c939c4ecb9b8b0b4, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_07_cop.png
+    outputMaterialSprite: {fileID: 21300000, guid: 615046ade6d7b7140acdb61dd87566d7, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_08_cone.png
     worldPosition: {x: -22, y: 9, z: 240}
     focusCameraPos: {x: 16, y: 15.5, z: 266}
     focusLookAtPos: {x: -22, y: 8.5, z: 238}
@@ -448,6 +528,16 @@ MonoBehaviour:
         \u7269\u6D41\u4E0E\u7ACB\u4F53\u4ED3\u50A8\u5171\u540C\u6784\u6210\u201C\u9ED1\u706F\u5DE5\u5382\u201D\u7684\u672B\u7AEF\u667A\u80FD\u7269\u6D41\u4E0E\u8D28\u91CF\u95ED\u73AF\u3002"
     previewSprite: {fileID: 21300000, guid: cbe674229a3ca5641a145d265b6b4ede, type: 3}
     previewSpritePath: "Assets/Scenes/Play/\u6444\u56FE\u7F51_600865141_\u5DE5\u4E1A\u68C9\u7EB1\u7EBA\u7EC7\u5DE5\u5382(\u4EC5\u4EA4\u6D41\u5B66\u4E60\u4F7F\u7528).jpg"
+    stageGroup: "\u667A\u80FD\u8D28\u68C0\u4E0E\u7269\u6D41"
+    inputMaterialName: "\u6210\u54C1\u5927\u7B52\u5B50\u7EB1"
+    processActionLabel: "AI \u89C6\u89C9\u5206\u62E3 \xB7 \u667A\u80FD\u5165\u5E93"
+    outputMaterialName: "\u5408\u683C\u6210\u54C1\u5165\u7ACB\u4F53\u5E93"
+    processIconSprite: {fileID: 21300000, guid: 2d0154c9d54b59b4183ae511d245fc80, type: 3}
+    processIconPath: Assets/_Project/UI/Sprites/Teaching/icon_step_09.png
+    inputMaterialSprite: {fileID: 21300000, guid: 615046ade6d7b7140acdb61dd87566d7, type: 3}
+    inputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_08_cone.png
+    outputMaterialSprite: {fileID: 21300000, guid: 53131b7dae500f049a7d846e376c1445, type: 3}
+    outputMaterialPath: Assets/_Project/UI/Sprites/Teaching/mat_09_asrs.png
     worldPosition: {x: 39.5, y: 9, z: 408}
     focusCameraPos: {x: 39.5, y: 14.2, z: 376}
     focusLookAtPos: {x: 39.5, y: 8.8, z: 424}

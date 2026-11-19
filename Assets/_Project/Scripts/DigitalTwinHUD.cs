@@ -9,28 +9,36 @@ using UIImage = UnityEngine.UI.Image;
 namespace CNC.DigitalTwin
 {
     /// <summary>
-    /// Style A (Apple VisionOS Spatial Frosted Glass) Unified Digital Twin Dashboard & Teaching Tour HUD.
-    /// Minimalist floating glass pills, 80%+ open 3D factory viewport, zero visual clutter.
+    /// Style A (Apple VisionOS Spatial Frosted Glass) Unified Digital Twin Dashboard & Visual Teaching Studio HUD.
+    /// - Dashboard Mode: Crisp high-contrast floating KPI island, telemetry inspector, and process dock.
+    /// - Teaching Mode: Dedicated classroom-grade 9-step visual spinning flowchart ribbon + large-typography
+    ///   material transformation diagram (Input -> Action -> Output) + 3 clean study tabs (Principle / Equipment / Quiz).
     /// </summary>
     public class DigitalTwinHUD : MonoBehaviour
     {
         public static DigitalTwinHUD Instance { get; private set; }
 
-        [Header("Style A Pill Sprites")]
+        [Header("Style A Pill & Teaching Card Sprites")]
         public Sprite spPillActiveWhite;
         public Sprite spPillActiveSky;
         public Sprite spPillIdle;
         public Sprite spPillGhost;
         public Sprite spPillGreen;
         public Sprite spPillDanger;
+        public Sprite spTeachStepIdle;
+        public Sprite spTeachStepActive;
+        public Sprite spTeachStepDone;
 
-        [Header("Root Containers")]
+        [Header("Root Mode Containers")]
         public GameObject hudMainContainer;
         public RectTransform leftPanelRect;
         public GameObject leftPanelRoot;
         public GameObject rightPanelRoot;
+        public GameObject bottomDockRoot;
         public GameObject dashboardLeftContent;
-        public GameObject teachingLeftContent;
+        public GameObject teachingFlowRibbonRoot;
+        public GameObject teachingStudioCardRoot;
+        public GameObject teachingHintPill;
 
         [Header("Top Floating Pills")]
         public TextMeshProUGUI clockText;
@@ -59,21 +67,56 @@ namespace CNC.DigitalTwin
         public UIImage[] warehouseSlotCells = new UIImage[16];
         public TextMeshProUGUI eventLogText;
 
-        [Header("Left Floating Island - Teaching Tour")]
+        [Header("Teaching Mode - Top 9-Step Illustrated Flowchart Ribbon")]
+        public Button[] teachingStepButtons = new Button[9];
+        public UIImage[] teachingStepIcons = new UIImage[9];
+        public TextMeshProUGUI[] teachingStepCheckTexts = new TextMeshProUGUI[9];
+
+        [Header("Teaching Mode - Large Visual Studio Card")]
+        public TextMeshProUGUI teachStageBadgeText;
         public TextMeshProUGUI teachingProgressText;
         public UIImage teachingProgressBar;
-        public Button[] teachingStepButtons = new Button[9];
-        public TextMeshProUGUI[] teachingStepCheckTexts = new TextMeshProUGUI[9];
+        public TextMeshProUGUI teachStationTitleText;
+
+        [Header("Teaching Mode - Input -> Process -> Output Diagram")]
+        public UIImage teachInputIcon;
+        public TextMeshProUGUI teachInputNameText;
+        public TextMeshProUGUI teachActionLabelText;
+        public UIImage teachOutputIcon;
+        public TextMeshProUGUI teachOutputNameText;
+
+        [Header("Teaching Mode - 3 Clean Study Tabs")]
+        public Button btnTeachTabPrinciple;
+        public Button btnTeachTabEquipment;
+        public Button btnTeachTabQuiz;
+        public GameObject teachTabPrincipleRoot;
+        public GameObject teachTabEquipmentRoot;
+        public GameObject teachTabQuizRoot;
+
+        [Header("Teaching Tab 1 - Principle & Key Points")]
         public TextMeshProUGUI teachingGoalText;
-        public TextMeshProUGUI teachingKeyPointsText;
+        public TextMeshProUGUI teachPrincipleBodyText;
+        public TextMeshProUGUI[] teachKeyPointTexts = new TextMeshProUGUI[3];
+
+        [Header("Teaching Tab 2 - Equipment Photo & Specs")]
+        public UIImage teachEquipmentPhoto;
+        public TextMeshProUGUI teachEquipmentSpecsText;
+        public Button btnTeachToggleRun;
+        public TextMeshProUGUI btnTeachToggleRunLabel;
+
+        [Header("Teaching Tab 3 - Interactive Quiz")]
         public TextMeshProUGUI quizQuestionText;
         public Button[] quizOptionButtons = new Button[3];
         public TextMeshProUGUI[] quizOptionTexts = new TextMeshProUGUI[3];
         public TextMeshProUGUI quizFeedbackText;
+
+        [Header("Teaching Mode - Bottom Navigation")]
         public Button btnPrevStation;
+        public Button btnTeachAutoTour;
+        public TextMeshProUGUI btnTeachAutoTourLabel;
         public Button btnNextStation;
 
-        [Header("Right Floating Drawer - Device Inspector")]
+        [Header("Right Floating Drawer - Dashboard Device Inspector")]
         public TextMeshProUGUI inspectorCodeText;
         public TextMeshProUGUI inspectorNameText;
         public TextMeshProUGUI inspectorEngNameText;
@@ -89,7 +132,7 @@ namespace CNC.DigitalTwin
         public TextMeshProUGUI specsTableText;
         public TextMeshProUGUI processSummaryText;
 
-        [Header("Bottom Floating Dock")]
+        [Header("Bottom Floating Dock (Dashboard)")]
         public Button[] flowNodeButtons = new Button[9];
         public Button btnSimPlayPause;
         public TextMeshProUGUI btnSimPlayPauseLabel;
@@ -117,18 +160,19 @@ namespace CNC.DigitalTwin
         public Button btnCancelQuit;
 
         [Header("Style A Palette")]
-        public Color colorDarkOnWhite = new Color(0.06f, 0.09f, 0.16f, 1f);
-        public Color colorSoftWhite = new Color(0.95f, 0.97f, 1.0f, 0.92f);
-        public Color colorMutedText = new Color(0.82f, 0.87f, 0.94f, 0.78f);
-        public Color colorSky = new Color(0.22f, 0.74f, 0.97f, 0.88f);
-        public Color colorMint = new Color(0.20f, 0.83f, 0.60f, 1f);
-        public Color colorAmber = new Color(0.98f, 0.74f, 0.14f, 1f);
-        public Color colorSlotOn = new Color(0.22f, 0.74f, 0.97f, 0.85f);
-        public Color colorSlotOff = new Color(1.0f, 1.0f, 1.0f, 0.12f);
+        public Color colorDarkOnWhite = new Color(0.05f, 0.08f, 0.14f, 1f);
+        public Color colorSoftWhite = new Color(0.97f, 0.98f, 1.0f, 0.96f);
+        public Color colorMutedText = new Color(0.84f, 0.89f, 0.96f, 0.86f);
+        public Color colorSky = new Color(0.22f, 0.74f, 0.97f, 0.95f);
+        public Color colorMint = new Color(0.20f, 0.85f, 0.62f, 1f);
+        public Color colorAmber = new Color(0.98f, 0.76f, 0.18f, 1f);
+        public Color colorSlotOn = new Color(0.22f, 0.74f, 0.97f, 0.90f);
+        public Color colorSlotOff = new Color(1.0f, 1.0f, 1.0f, 0.14f);
 
         private bool _hudHidden;
         private bool _sidePanelsCollapsed;
         private int _displayedStationIndex = 0;
+        private int _activeTeachTab = 0;
         private readonly float[] _speeds = { 0.5f, 1.0f, 2.0f, 4.0f };
         private int _speedIdx = 1;
         private readonly StringBuilder _sb = new StringBuilder(512);
@@ -169,9 +213,11 @@ namespace CNC.DigitalTwin
             if (hoverTooltipRoot != null) hoverTooltipRoot.SetActive(false);
 
             _displayedStationIndex = (sim != null && sim.selectedStationIndex >= 0) ? sim.selectedStationIndex : 0;
+            SelectTeachingTab(0);
             HandleModeChanged(sim != null ? sim.currentMode : AppMode.Dashboard);
             HandleViewModeChanged(cam != null ? cam.CurrentViewMode : CameraViewMode.FirstPersonWalk);
             RefreshInspector(_displayedStationIndex);
+            RefreshTeachingPanel(_displayedStationIndex);
             RefreshAllStates();
             RefreshLiveTelemetry();
             RefreshLogs();
@@ -225,8 +271,9 @@ namespace CNC.DigitalTwin
             if (btnModeTeaching != null) btnModeTeaching.onClick.AddListener(() =>
             {
                 SimulationState.Instance?.SetMode(AppMode.TeachingTour);
-                if (SimulationState.Instance != null && SimulationState.Instance.selectedStationIndex < 0)
-                    CameraRigManager.Instance?.FocusStation(0, false);
+                int idx = (SimulationState.Instance != null && SimulationState.Instance.selectedStationIndex >= 0)
+                    ? SimulationState.Instance.selectedStationIndex : 0;
+                CameraRigManager.Instance?.FocusStation(idx, false);
             });
 
             if (btnCamFps != null) btnCamFps.onClick.AddListener(() => CameraRigManager.Instance?.SetViewMode(CameraViewMode.FirstPersonWalk));
@@ -269,11 +316,8 @@ namespace CNC.DigitalTwin
 #endif
             });
 
-            if (btnToggleStationRun != null) btnToggleStationRun.onClick.AddListener(() =>
-            {
-                SimulationState.Instance?.ToggleStationRun(_displayedStationIndex);
-                RefreshInspector(_displayedStationIndex);
-            });
+            if (btnToggleStationRun != null) btnToggleStationRun.onClick.AddListener(OnToggleDisplayedStationRun);
+            if (btnTeachToggleRun != null) btnTeachToggleRun.onClick.AddListener(OnToggleDisplayedStationRun);
 
             if (btnSimPlayPause != null) btnSimPlayPause.onClick.AddListener(() => SimulationState.Instance?.ToggleGlobalRun());
             if (btnSpeedCycle != null) btnSpeedCycle.onClick.AddListener(() =>
@@ -285,11 +329,16 @@ namespace CNC.DigitalTwin
             if (btnCollapseSidePanels != null) btnCollapseSidePanels.onClick.AddListener(() =>
             {
                 _sidePanelsCollapsed = !_sidePanelsCollapsed;
-                if (leftPanelRoot != null) leftPanelRoot.SetActive(!_sidePanelsCollapsed);
-                if (rightPanelRoot != null) rightPanelRoot.SetActive(!_sidePanelsCollapsed);
+                ApplyModePanelVisibility();
                 if (btnCollapseLabel != null) btnCollapseLabel.text = _sidePanelsCollapsed ? "展开" : "极简";
             });
 
+            // Teaching Tabs
+            if (btnTeachTabPrinciple != null) btnTeachTabPrinciple.onClick.AddListener(() => SelectTeachingTab(0));
+            if (btnTeachTabEquipment != null) btnTeachTabEquipment.onClick.AddListener(() => SelectTeachingTab(1));
+            if (btnTeachTabQuiz != null) btnTeachTabQuiz.onClick.AddListener(() => SelectTeachingTab(2));
+
+            // Teaching Prev / AutoTour / Next
             if (btnPrevStation != null) btnPrevStation.onClick.AddListener(() =>
             {
                 int prev = (_displayedStationIndex - 1 + 9) % 9;
@@ -299,6 +348,16 @@ namespace CNC.DigitalTwin
             {
                 int next = (_displayedStationIndex + 1) % 9;
                 CameraRigManager.Instance?.FocusStation(next, false);
+            });
+            if (btnTeachAutoTour != null) btnTeachAutoTour.onClick.AddListener(() =>
+            {
+                var cam = CameraRigManager.Instance;
+                if (cam == null) return;
+                if (cam.CurrentViewMode == CameraViewMode.AutoTour)
+                    cam.FocusStation(_displayedStationIndex, true);
+                else
+                    cam.SetViewMode(CameraViewMode.AutoTour);
+                RefreshTeachingAutoTourButton();
             });
 
             for (int i = 0; i < 9; i++)
@@ -326,10 +385,29 @@ namespace CNC.DigitalTwin
                 sensSlider.onValueChanged.AddListener(v =>
                 {
                     CameraRigManager.Instance?.ApplySensitivity(v);
-                    if (sensValueText != null) sensValueText.text = $"{v:0.0}";
+                    if (sensValueText != null) sensValueText.text = $"{v:F1}";
                 });
-                if (sensValueText != null) sensValueText.text = $"{AppLaunchContext.MouseSensitivity:0.0}";
+                if (sensValueText != null) sensValueText.text = $"{AppLaunchContext.MouseSensitivity:F1}";
             }
+        }
+
+        private void OnToggleDisplayedStationRun()
+        {
+            SimulationState.Instance?.ToggleStationRun(_displayedStationIndex);
+            RefreshInspector(_displayedStationIndex);
+            RefreshTeachingPanel(_displayedStationIndex);
+        }
+
+        public void SelectTeachingTab(int tabIdx)
+        {
+            _activeTeachTab = Mathf.Clamp(tabIdx, 0, 2);
+            if (teachTabPrincipleRoot != null) teachTabPrincipleRoot.SetActive(_activeTeachTab == 0);
+            if (teachTabEquipmentRoot != null) teachTabEquipmentRoot.SetActive(_activeTeachTab == 1);
+            if (teachTabQuizRoot != null) teachTabQuizRoot.SetActive(_activeTeachTab == 2);
+
+            ApplyPillStyle(btnTeachTabPrinciple, _activeTeachTab == 0, true);
+            ApplyPillStyle(btnTeachTabEquipment, _activeTeachTab == 1, true);
+            ApplyPillStyle(btnTeachTabQuiz, _activeTeachTab == 2, true);
         }
 
         public void ShowQuitModal()
@@ -345,19 +423,34 @@ namespace CNC.DigitalTwin
             if (hudMainContainer != null) hudMainContainer.SetActive(!_hudHidden);
         }
 
+        private void ApplyModePanelVisibility()
+        {
+            var sim = SimulationState.Instance;
+            bool isDash = sim == null || sim.currentMode == AppMode.Dashboard;
+
+            if (leftPanelRoot != null) leftPanelRoot.SetActive(isDash && !_sidePanelsCollapsed);
+            if (rightPanelRoot != null) rightPanelRoot.SetActive(isDash && !_sidePanelsCollapsed);
+            if (bottomDockRoot != null) bottomDockRoot.SetActive(isDash);
+            if (dashboardLeftContent != null) dashboardLeftContent.SetActive(isDash);
+
+            if (teachingFlowRibbonRoot != null) teachingFlowRibbonRoot.SetActive(!isDash);
+            if (teachingStudioCardRoot != null) teachingStudioCardRoot.SetActive(!isDash);
+            if (teachingHintPill != null) teachingHintPill.SetActive(!isDash);
+
+            if (fpsHintBanner != null)
+            {
+                bool walk = CameraRigManager.Instance != null &&
+                            CameraRigManager.Instance.CurrentViewMode == CameraViewMode.FirstPersonWalk;
+                fpsHintBanner.SetActive(isDash && walk);
+            }
+        }
+
         private void HandleModeChanged(AppMode mode)
         {
-            bool isDash = mode == AppMode.Dashboard;
-            if (dashboardLeftContent != null) dashboardLeftContent.SetActive(isDash);
-            if (teachingLeftContent != null) teachingLeftContent.SetActive(!isDash);
-
-            // Compact 418px floating island in Dashboard mode -> huge open 3D space below!
-            // Smoothly expands to 648px in Teaching Tour mode (clears BottomProcessDock even on 2.3:1 wide views).
-            if (leftPanelRect != null)
-                leftPanelRect.sizeDelta = new Vector2(296f, isDash ? 418f : 648f);
-
+            ApplyModePanelVisibility();
             RefreshHeaderButtons();
             RefreshTeachingPanel(_displayedStationIndex);
+            RefreshTeachingAutoTourButton();
         }
 
         private void HandleStationSelected(int idx)
@@ -370,9 +463,9 @@ namespace CNC.DigitalTwin
 
         private void HandleViewModeChanged(CameraViewMode mode)
         {
-            if (fpsHintBanner != null)
-                fpsHintBanner.SetActive(mode == CameraViewMode.FirstPersonWalk);
+            ApplyModePanelVisibility();
             RefreshHeaderButtons();
+            RefreshTeachingAutoTourButton();
         }
 
         private void HandleHallChanged(WorkshopHall hall) => RefreshHeaderButtons();
@@ -390,7 +483,7 @@ namespace CNC.DigitalTwin
             {
                 var st = sim.Stations[hovered.stationIndex];
                 if (hoverTooltipText != null)
-                    hoverTooltipText.text = $"{st.code} · {st.name}\n<color=#7DD3FC>左键点击查看详情与远程控制</color>";
+                    hoverTooltipText.text = $"{st.code} · {st.name}\n<color=#7DD3FC>左键点击聚焦查看详情</color>";
                 hoverTooltipRoot.SetActive(true);
             }
         }
@@ -398,6 +491,7 @@ namespace CNC.DigitalTwin
         private void RefreshAllStates()
         {
             RefreshHeaderButtons();
+            RefreshTeachingAutoTourButton();
             var sim = SimulationState.Instance;
             if (sim == null) return;
 
@@ -419,6 +513,18 @@ namespace CNC.DigitalTwin
                 statusSummaryText.text = sim.isRunning
                     ? $"{runningCount}/9 工段在线"
                     : "产线已暂停";
+
+            RefreshTeachingFlowStepStyles();
+        }
+
+        private void RefreshTeachingAutoTourButton()
+        {
+            if (btnTeachAutoTour == null) return;
+            bool touring = CameraRigManager.Instance != null &&
+                           CameraRigManager.Instance.CurrentViewMode == CameraViewMode.AutoTour;
+            ApplyPillStyle(btnTeachAutoTour, touring, false);
+            if (btnTeachAutoTourLabel != null)
+                btnTeachAutoTourLabel.text = touring ? "暂停导览" : "自动导览";
         }
 
         private void RefreshHeaderButtons()
@@ -452,13 +558,13 @@ namespace CNC.DigitalTwin
             var sim = SimulationState.Instance;
             if (sim == null) return;
 
-            if (kpiOutputText != null) kpiOutputText.text = $"{sim.totalOutputKg:N0}<size=12><color=#CBD5E1> kg</color></size>";
-            if (kpiPassRateText != null) kpiPassRateText.text = $"{sim.passRatePct:0.0}<size=12>%</size>";
-            if (kpiOeeText != null) kpiOeeText.text = $"{sim.oeePct:0.0}<size=12>%</size>";
-            if (kpiWarehouseShortText != null) kpiWarehouseShortText.text = $"{sim.occupiedWarehouseSlots}<size=12><color=#94A3B8> / 16</color></size>";
+            if (kpiOutputText != null) kpiOutputText.text = $"{sim.totalOutputKg:N0}<size=14><color=#CBD5E1> kg</color></size>";
+            if (kpiPassRateText != null) kpiPassRateText.text = $"{sim.passRatePct:F1}<size=14>%</size>";
+            if (kpiOeeText != null) kpiOeeText.text = $"{sim.oeePct:F1}<size=14>%</size>";
+            if (kpiWarehouseShortText != null) kpiWarehouseShortText.text = $"{sim.occupiedWarehouseSlots}<size=14><color=#94A3B8> / 16</color></size>";
 
             if (warehouseOccupancyText != null)
-                warehouseOccupancyText.text = $"{(sim.occupiedWarehouseSlots * 100f / 16f):0.0}%";
+                warehouseOccupancyText.text = $"{(sim.occupiedWarehouseSlots * 100f / 16f):F1}%";
 
             for (int i = 0; i < warehouseSlotCells.Length && i < sim.warehouseSlotStates.Length; i++)
                 if (warehouseSlotCells[i] != null)
@@ -477,16 +583,43 @@ namespace CNC.DigitalTwin
             if (telemetryLoadBar != null) telemetryLoadBar.fillAmount = Mathf.Clamp01(loadPct / 100f);
 
             if (teachingProgressText != null)
-                teachingProgressText.text = $"实训进度  已学 {sim.GetLearnedCount()}/9  ·  考核 {sim.GetQuizPassedCount()}/9";
+                teachingProgressText.text = $"已学 {sim.GetLearnedCount()}/9  ·  通过 {sim.GetQuizPassedCount()}/9";
             if (teachingProgressBar != null)
                 teachingProgressBar.fillAmount = sim.GetLearnedCount() / 9f;
 
-            for (int i = 0; i < 9 && i < teachingStepCheckTexts.Length; i++)
+            RefreshTeachingFlowStepStyles();
+        }
+
+        private void RefreshTeachingFlowStepStyles()
+        {
+            var sim = SimulationState.Instance;
+            if (sim == null) return;
+
+            for (int i = 0; i < 9; i++)
             {
-                if (teachingStepCheckTexts[i] == null) continue;
-                if (sim.stationQuizPassed[i]) teachingStepCheckTexts[i].text = "<color=#34D399>★ 通过</color>";
-                else if (sim.stationLearned[i]) teachingStepCheckTexts[i].text = "<color=#7DD3FC>✓ 已学</color>";
-                else teachingStepCheckTexts[i].text = "<color=#94A3B8>待学</color>";
+                bool isCurrent = i == _displayedStationIndex;
+                bool passed = sim.stationQuizPassed[i];
+                bool learned = sim.stationLearned[i];
+
+                if (i < teachingStepButtons.Length && teachingStepButtons[i] != null)
+                {
+                    var img = teachingStepButtons[i].GetComponent<UIImage>();
+                    if (img != null)
+                    {
+                        if (isCurrent && spTeachStepActive != null) img.sprite = spTeachStepActive;
+                        else if (passed && spTeachStepDone != null) img.sprite = spTeachStepDone;
+                        else if (spTeachStepIdle != null) img.sprite = spTeachStepIdle;
+                        img.color = Color.white;
+                    }
+                }
+
+                if (i < teachingStepCheckTexts.Length && teachingStepCheckTexts[i] != null)
+                {
+                    if (isCurrent) teachingStepCheckTexts[i].text = $"<color=#BAE6FD>{i + 1:00} 当前讲解</color>";
+                    else if (passed) teachingStepCheckTexts[i].text = $"<color=#34D399>{i + 1:00} ★ 已通过</color>";
+                    else if (learned) teachingStepCheckTexts[i].text = $"<color=#7DD3FC>{i + 1:00} ✓ 已学习</color>";
+                    else teachingStepCheckTexts[i].text = $"<color=#94A3B8>{i + 1:00} 待学习</color>";
+                }
             }
         }
 
@@ -509,7 +642,7 @@ namespace CNC.DigitalTwin
             if (btnToggleStationRunLabel != null)
             {
                 btnToggleStationRunLabel.text = active ? "● 运行中" : "● 已停机";
-                btnToggleStationRunLabel.color = active ? new Color(0.43f, 0.91f, 0.72f) : new Color(0.99f, 0.65f, 0.65f);
+                btnToggleStationRunLabel.color = active ? new Color(0.43f, 0.93f, 0.74f) : new Color(0.99f, 0.65f, 0.65f);
             }
 
             if (inspectorPreviewImage != null && st.previewSprite != null)
@@ -518,26 +651,28 @@ namespace CNC.DigitalTwin
                 inspectorPreviewImage.preserveAspect = true;
             }
 
-            if (specsTableText != null && st.specs != null)
-            {
-                _sb.Clear();
-                int lim = Mathf.Min(st.specs.Length, 5);
-                for (int i = 0; i < lim; i++)
-                {
-                    var sp = st.specs[i];
-                    _sb.Append("<color=#94A3B8>").Append(sp.label).Append("</color>    ");
-                    _sb.Append("<color=#F8FAFC><b>").Append(sp.value).Append("</b></color>");
-                    if (!string.IsNullOrEmpty(sp.unit))
-                        _sb.Append(" <color=#7DD3FC>").Append(sp.unit).Append("</color>");
-                    if (i < lim - 1) _sb.Append('\n');
-                }
-                specsTableText.text = _sb.ToString();
-            }
-
-            if (processSummaryText != null)
-                processSummaryText.text = st.processSummary;
+            string formattedSpecs = BuildSpecsText(st);
+            if (specsTableText != null) specsTableText.text = formattedSpecs;
+            if (processSummaryText != null) processSummaryText.text = st.processSummary;
 
             RefreshLiveTelemetry();
+        }
+
+        private string BuildSpecsText(StationInfo st)
+        {
+            if (st == null || st.specs == null) return "";
+            _sb.Clear();
+            int lim = Mathf.Min(st.specs.Length, 5);
+            for (int i = 0; i < lim; i++)
+            {
+                var sp = st.specs[i];
+                _sb.Append("<color=#94A3B8>").Append(sp.label).Append("：</color>");
+                _sb.Append("<color=#FFFFFF><b>").Append(sp.value).Append("</b></color>");
+                if (!string.IsNullOrEmpty(sp.unit))
+                    _sb.Append(" <color=#7DD3FC>").Append(sp.unit).Append("</color>");
+                if (i < lim - 1) _sb.Append('\n');
+            }
+            return _sb.ToString();
         }
 
         private void RefreshTeachingPanel(int idx)
@@ -546,15 +681,66 @@ namespace CNC.DigitalTwin
             if (sim == null || idx < 0 || idx >= sim.Stations.Count) return;
             var st = sim.Stations[idx];
 
+            // Header
+            if (teachStageBadgeText != null)
+                teachStageBadgeText.text = $"第 {idx + 1}/9 步  ·  {(string.IsNullOrEmpty(st.stageGroup) ? st.shortName : st.stageGroup)}";
+            if (teachStationTitleText != null)
+                teachStationTitleText.text = st.name;
+
+            // Input -> Process -> Output Visual Cotton Transformation Diagram
+            if (teachInputIcon != null && st.inputMaterialSprite != null) teachInputIcon.sprite = st.inputMaterialSprite;
+            if (teachInputNameText != null) teachInputNameText.text = string.IsNullOrEmpty(st.inputMaterialName) ? "上道物料" : st.inputMaterialName;
+            if (teachActionLabelText != null) teachActionLabelText.text = string.IsNullOrEmpty(st.processActionLabel) ? st.shortName : st.processActionLabel;
+            if (teachOutputIcon != null && st.outputMaterialSprite != null) teachOutputIcon.sprite = st.outputMaterialSprite;
+            if (teachOutputNameText != null) teachOutputNameText.text = string.IsNullOrEmpty(st.outputMaterialName) ? "本道成品" : st.outputMaterialName;
+
+            // Tab 1: Goal + Plain Process Principle + 3 Numbered Key-Point Cards
             if (teachingGoalText != null)
-                teachingGoalText.text = $"<color=#7DD3FC><b>{st.code} 教学目标</b></color>\n{st.teachingGoal}";
+                teachingGoalText.text = $"<color=#7DD3FC><b>学习目标：</b></color>{st.teachingGoal}";
+            if (teachPrincipleBodyText != null)
+                teachPrincipleBodyText.text = st.processSummary;
 
-            if (teachingKeyPointsText != null && st.teachingKeyPoints != null)
-                teachingKeyPointsText.text = string.Join("\n", st.teachingKeyPoints);
+            if (teachKeyPointTexts != null && st.teachingKeyPoints != null)
+            {
+                for (int i = 0; i < teachKeyPointTexts.Length; i++)
+                {
+                    if (teachKeyPointTexts[i] == null) continue;
+                    string raw = i < st.teachingKeyPoints.Length ? st.teachingKeyPoints[i] : "";
+                    // Strip leading "1. " because the visual numbered badge displays 1/2/3 cleanly
+                    if (raw.Length > 3 && char.IsDigit(raw[0]) && raw[1] == '.')
+                        raw = raw.Substring(2).Trim();
+                    int colon = raw.IndexOf('：');
+                    if (colon > 0)
+                        raw = $"<color=#FFFFFF><b>{raw.Substring(0, colon + 1)}</b></color>{raw.Substring(colon + 1)}";
+                    teachKeyPointTexts[i].text = raw;
+                }
+            }
 
+            // Tab 2: Large Equipment Photo + Specs + Interactive Demo Toggle
+            if (teachEquipmentPhoto != null && st.previewSprite != null)
+            {
+                teachEquipmentPhoto.sprite = st.previewSprite;
+                teachEquipmentPhoto.preserveAspect = true;
+            }
+            if (teachEquipmentSpecsText != null)
+                teachEquipmentSpecsText.text = BuildSpecsText(st);
+
+            bool active = sim.isRunning && sim.stationRunning[idx];
+            if (btnTeachToggleRun != null)
+            {
+                var img = btnTeachToggleRun.GetComponent<UIImage>();
+                if (img != null) img.sprite = active ? spPillGreen : spPillDanger;
+            }
+            if (btnTeachToggleRunLabel != null)
+            {
+                btnTeachToggleRunLabel.text = active ? "● 设备运行中（点击演示远程停机）" : "● 设备已停机（点击演示远程启动）";
+                btnTeachToggleRunLabel.color = active ? new Color(0.46f, 0.96f, 0.76f) : new Color(1.0f, 0.70f, 0.70f);
+            }
+
+            // Tab 3: Large Clear Quiz
             if (st.quiz != null)
             {
-                if (quizQuestionText != null) quizQuestionText.text = $"随堂考核：{st.quiz.question}";
+                if (quizQuestionText != null) quizQuestionText.text = $"考核题目：{st.quiz.question}";
                 for (int i = 0; i < 3; i++)
                 {
                     if (i < quizOptionTexts.Length && quizOptionTexts[i] != null && st.quiz.options != null && i < st.quiz.options.Length)
@@ -564,9 +750,11 @@ namespace CNC.DigitalTwin
                 }
                 if (quizFeedbackText != null)
                     quizFeedbackText.text = sim.stationQuizPassed[idx]
-                        ? $"<color=#34D399>✓ 已通过！</color>{st.quiz.explanation}"
-                        : "<color=#94A3B8>选择正确选项完成本工段工艺考核。</color>";
+                        ? $"<color=#34D399><b>✓ 本工段考核已通过！</b></color>\n{st.quiz.explanation}"
+                        : "<color=#CBD5E1>请根据“工艺原理”选择正确答案，通过后自动点亮本工段绿色徽章。</color>";
             }
+
+            RefreshTeachingFlowStepStyles();
         }
 
         private void OnQuizOptionClicked(int optionIdx)
@@ -581,16 +769,17 @@ namespace CNC.DigitalTwin
             {
                 sim.MarkQuizPassed(_displayedStationIndex);
                 if (quizFeedbackText != null)
-                    quizFeedbackText.text = $"<color=#34D399>✓ 回答正确！</color>{st.quiz.explanation}";
+                    quizFeedbackText.text = $"<color=#34D399><b>✓ 回答正确！已掌握本工段核心原理。</b></color>\n{st.quiz.explanation}";
             }
             else
             {
                 if (quizFeedbackText != null)
-                    quizFeedbackText.text = "<color=#F87171>✕ 回答有误，请参考上方工艺要点再试。</color>";
+                    quizFeedbackText.text = "<color=#F87171><b>✕ 回答有误</b></color>\n可切换至左侧【工艺原理与要点】复习物料流向与关键指标后再试。";
             }
 
             for (int i = 0; i < quizOptionButtons.Length; i++)
                 ApplyPillStyle(quizOptionButtons[i], i == optionIdx, false);
+            RefreshTeachingFlowStepStyles();
         }
 
         private void RefreshLogs()

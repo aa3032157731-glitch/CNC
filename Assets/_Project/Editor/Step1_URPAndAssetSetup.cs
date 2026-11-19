@@ -193,18 +193,28 @@ namespace CNC.EditorTools
             Debug.Log($"[CNC Step1] Optimized import settings for {count} models.");
         }
 
-        private static void CreateChineseTmpFonts()
+        public static void RebuildCrispChineseFonts()
         {
-            CreateSingleTmpFont($"{FontsDir}/CNC_Sans_Regular.ttf", $"{FontsDir}/CNC_Sans_Regular_SDF.asset", true);
-            CreateSingleTmpFont($"{FontsDir}/CNC_Sans_Bold.ttf", $"{FontsDir}/CNC_Sans_Bold_SDF.asset", false);
+            Debug.Log("[CNC Step1] Rebuilding ultra-crisp 72pt Noto Sans SC SDF fonts...");
+            AssetDatabase.Refresh();
+            CreateChineseTmpFonts();
+            AssetDatabase.SaveAssets();
         }
 
-        private static void CreateSingleTmpFont(string ttfPath, string outAssetPath, bool setAsDefault)
+        private static void CreateChineseTmpFonts()
         {
-            var font = AssetDatabase.LoadAssetAtPath<Font>(ttfPath);
+            string regSrc = File.Exists($"{FontsDir}/CNC_Sans_Regular.otf") ? $"{FontsDir}/CNC_Sans_Regular.otf" : $"{FontsDir}/CNC_Sans_Regular.ttf";
+            string boldSrc = File.Exists($"{FontsDir}/CNC_Sans_Bold.otf") ? $"{FontsDir}/CNC_Sans_Bold.otf" : $"{FontsDir}/CNC_Sans_Bold.ttf";
+            CreateSingleTmpFont(regSrc, $"{FontsDir}/CNC_Sans_Regular_SDF.asset", true);
+            CreateSingleTmpFont(boldSrc, $"{FontsDir}/CNC_Sans_Bold_SDF.asset", false);
+        }
+
+        private static void CreateSingleTmpFont(string fontPath, string outAssetPath, bool setAsDefault)
+        {
+            var font = AssetDatabase.LoadAssetAtPath<Font>(fontPath);
             if (font == null)
             {
-                Debug.LogWarning($"[CNC Step1] Font not found at {ttfPath}");
+                Debug.LogWarning($"[CNC Step1] Font not found at {fontPath}");
                 return;
             }
 
@@ -214,21 +224,21 @@ namespace CNC.EditorTools
                 AssetDatabase.DeleteAsset(outAssetPath);
             }
 
-            // Dynamic SDF font asset: automatically rasterizes any Chinese/ASCII glyph on demand with crisp SDF quality!
+            // Ultra-crisp 72pt Dynamic SDFAA_HINTED font asset (Noto Sans SC Medium/Bold — razor-sharp at ALL scales!)
             var tmpFont = TMP_FontAsset.CreateFontAsset(
                 font,
-                48,                  // samplingPointSize (high sharpness)
-                5,                   // atlasPadding
-                GlyphRenderMode.SDFAA,
-                2048,                // atlasWidth
-                2048,                // atlasHeight
+                72,                          // High-res samplingPointSize for crystal clarity even at small Game View scale
+                7,                           // Generous atlasPadding for clean dilate & subtle drop shadow
+                GlyphRenderMode.SDFAA_HINTED,
+                2048,                        // atlasWidth
+                2048,                        // atlasHeight
                 AtlasPopulationMode.Dynamic,
-                true                 // enableMultiAtlasSupport
+                true                         // enableMultiAtlasSupport
             );
 
             if (tmpFont == null)
             {
-                Debug.LogError($"[CNC Step1] Failed to create TMP_FontAsset for {ttfPath}");
+                Debug.LogError($"[CNC Step1] Failed to create TMP_FontAsset for {fontPath}");
                 return;
             }
 
@@ -239,16 +249,25 @@ namespace CNC.EditorTools
             if (tmpFont.atlasTexture != null)
             {
                 tmpFont.atlasTexture.name = tmpFont.name + " Atlas";
+                tmpFont.atlasTexture.filterMode = FilterMode.Bilinear;
                 AssetDatabase.AddObjectToAsset(tmpFont.atlasTexture, tmpFont);
             }
             if (tmpFont.material != null)
             {
                 tmpFont.material.name = tmpFont.name + " Material";
+                // Subtle face dilation + soft dark drop shadow => razor-sharp legibility over bright glass & skylights!
+                tmpFont.material.SetFloat(ShaderUtilities.ID_FaceDilate, 0.05f);
+                tmpFont.material.EnableKeyword("UNDERLAY_ON");
+                tmpFont.material.SetColor(ShaderUtilities.ID_UnderlayColor, new Color(0f, 0.02f, 0.06f, 0.58f));
+                tmpFont.material.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, 0f);
+                tmpFont.material.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -0.55f);
+                tmpFont.material.SetFloat(ShaderUtilities.ID_UnderlayDilate, 0.08f);
+                tmpFont.material.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0.25f);
                 AssetDatabase.AddObjectToAsset(tmpFont.material, tmpFont);
             }
 
             EditorUtility.SetDirty(tmpFont);
-            Debug.Log($"[CNC Step1] Created Dynamic Chinese TMP FontAsset: {outAssetPath}");
+            Debug.Log($"[CNC Step1] Created Ultra-Crisp 72pt Dynamic Chinese TMP FontAsset: {outAssetPath} from {fontPath}");
 
             // Hook as default / fallback in TMP Settings if available
             if (setAsDefault && TMP_Settings.instance != null)

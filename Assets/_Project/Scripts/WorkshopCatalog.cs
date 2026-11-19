@@ -48,6 +48,18 @@ namespace CNC.DigitalTwin
         public Sprite previewSprite;
         public string previewSpritePath;
 
+        [Header("Visual Teaching Process Metadata")]
+        public string stageGroup;
+        public string inputMaterialName;
+        public string processActionLabel;
+        public string outputMaterialName;
+        public Sprite processIconSprite;
+        public string processIconPath;
+        public Sprite inputMaterialSprite;
+        public string inputMaterialPath;
+        public Sprite outputMaterialSprite;
+        public string outputMaterialPath;
+
         public Vector3 worldPosition;
         public Vector3 focusCameraPos;
         public Vector3 focusLookAtPos;
@@ -102,6 +114,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：“勤抓少抓”可减小抓取棉束质量，显著提高开松度，为后续除杂与梳棉打好基础。"
                     },
                     previewSpritePath = "Assets/Fanyi/R-C (2).jpg",
+                    stageGroup = "清花开松阶段",
+                    inputMaterialName = "紧压原棉包",
+                    processActionLabel = "往复抓棉 · 精细开松",
+                    outputMaterialName = "松散均匀棉束",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_01.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_00_bale.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_01_flocks.png",
                     worldPosition = new Vector3(172.6f, 6.0f, 118.0f),
                     focusCameraPos = new Vector3(204.0f, 15.0f, 146.0f),
                     focusLookAtPos = new Vector3(168.0f, 5.5f, 114.0f),
@@ -143,6 +162,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：大杂质一旦被高速打手击碎，极易粘附于纤维形成疵点，后续梳棉与精梳极难彻底清除。"
                     },
                     previewSpritePath = "Assets/Fanyi/R-C (3).jpg",
+                    stageGroup = "清花开松阶段",
+                    inputMaterialName = "含杂原棉束",
+                    processActionLabel = "离心气流 · 逐级除杂",
+                    outputMaterialName = "洁净棉纤维流",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_02.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_01_flocks.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_02_clean.png",
                     worldPosition = new Vector3(137.5f, 7.2f, 30.5f),
                     focusCameraPos = new Vector3(165.0f, 15.0f, 54.0f),
                     focusLookAtPos = new Vector3(132.0f, 6.2f, 25.0f),
@@ -184,6 +210,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：梳棉工序直接决定了纤维分离度、棉结数量与生条均匀度，对最终成纱质量影响最大。"
                     },
                     previewSpritePath = "Assets/Fanyi/R-C (3).jpg",
+                    stageGroup = "梳理成条阶段",
+                    inputMaterialName = "洁净棉纤维流",
+                    processActionLabel = "锡林盖板 · 单纤分梳",
+                    outputMaterialName = "均匀梳棉生条",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_03.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_02_clean.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_03_card_sliver.png",
                     worldPosition = new Vector3(134.2f, 7.0f, 69.5f),
                     focusCameraPos = new Vector3(166.0f, 16.0f, 96.0f),
                     focusLookAtPos = new Vector3(132.0f, 6.5f, 64.0f),
@@ -225,6 +258,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：并条工序通过“并合+牵伸+自调匀整”三协同，核心解决棉条均匀度与纤维顺直度问题。"
                     },
                     previewSpritePath = "Assets/Fanyi/c5fa63cfccfce28eff817b3b0561815.jpg",
+                    stageGroup = "并合精梳阶段",
+                    inputMaterialName = "6~8 根梳棉生条",
+                    processActionLabel = "并合牵伸 · 自调匀整",
+                    outputMaterialName = "顺直均匀熟条",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_04.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_03_card_sliver.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_04_draw_sliver.png",
                     worldPosition = new Vector3(123.3f, 6.0f, 114.0f),
                     focusCameraPos = new Vector3(152.0f, 14.0f, 134.0f),
                     focusLookAtPos = new Vector3(123.3f, 5.2f, 108.0f),
@@ -266,6 +306,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：精梳机通过剔除短纤维与棉结，使纤维高度顺直整齐，是生产高支高密面料纱线的必备工艺。"
                     },
                     previewSpritePath = "Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg",
+                    stageGroup = "并合精梳阶段",
+                    inputMaterialName = "均匀并条棉卷",
+                    processActionLabel = "精密剔短 · 深度除结",
+                    outputMaterialName = "高齐度精梳条",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_05.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_04_draw_sliver.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_05_combed.png",
                     worldPosition = new Vector3(47.3f, 7.0f, 194.0f),
                     focusCameraPos = new Vector3(62.0f, 14.5f, 246.0f),
                     focusLookAtPos = new Vector3(36.0f, 7.0f, 194.0f),
@@ -307,6 +354,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：粗纱捻度只需满足卷绕、搬运和细纱退绕不断头即可，过大捻度会增加细纱牵伸阻力导致出硬头或条干恶化。"
                     },
                     previewSpritePath = "Assets/Fanyi/b6a4d20db8528f753f21003231b6934.jpg",
+                    stageGroup = "牵伸纺纱阶段",
+                    inputMaterialName = "高齐度精梳条",
+                    processActionLabel = "抽细加捻 · 锭翼卷绕",
+                    outputMaterialName = "弱捻大卷粗纱",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_06.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_05_combed.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_06_roving.png",
                     worldPosition = new Vector3(45.9f, 9.0f, 132.0f),
                     focusCameraPos = new Vector3(84.0f, 16.5f, 162.0f),
                     focusLookAtPos = new Vector3(45.9f, 8.5f, 130.0f),
@@ -348,6 +402,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：细纱机依靠高速旋转的锭子带动纱线拉动钢丝圈沿钢领滑动，两者转速差实现卷绕，旋转一周加上一个捻回。"
                     },
                     previewSpritePath = "Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg",
+                    stageGroup = "牵伸纺纱阶段",
+                    inputMaterialName = "弱捻大卷粗纱",
+                    processActionLabel = "大倍牵伸 · 高速真捻",
+                    outputMaterialName = "高强细纱管纱",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_07.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_06_roving.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_07_cop.png",
                     worldPosition = new Vector3(-16.2f, 10.0f, 130.0f),
                     focusCameraPos = new Vector3(18.0f, 16.0f, 158.0f),
                     focusLookAtPos = new Vector3(-16.2f, 9.5f, 128.0f),
@@ -389,6 +450,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：络筒既是纺纱品质的最后把关（电子清纱），又是满足高速整经/织造大卷装连续退绕的基础。"
                     },
                     previewSpritePath = "Assets/Fanyi/1cb8be29d30766661488f22f213bb84.jpg",
+                    stageGroup = "清纱络筒阶段",
+                    inputMaterialName = "多支细纱管纱",
+                    processActionLabel = "电子清纱 · 无结络筒",
+                    outputMaterialName = "无疵大筒子纱",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_08.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_07_cop.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_08_cone.png",
                     worldPosition = new Vector3(-22.0f, 9.0f, 240.0f),
                     focusCameraPos = new Vector3(16.0f, 15.5f, 266.0f),
                     focusLookAtPos = new Vector3(-22.0f, 8.5f, 238.0f),
@@ -430,6 +498,13 @@ namespace CNC.DigitalTwin
                         explanation = "解析：检测分拣、机械臂码垛、AGV 物流与立体仓储共同构成“黑灯工厂”的末端智能物流与质量闭环。"
                     },
                     previewSpritePath = "Assets/Scenes/Play/摄图网_600865141_工业棉纱纺织工厂(仅交流学习使用).jpg",
+                    stageGroup = "智能质检与物流",
+                    inputMaterialName = "成品大筒子纱",
+                    processActionLabel = "AI 视觉分拣 · 智能入库",
+                    outputMaterialName = "合格成品入立体库",
+                    processIconPath = "Assets/_Project/UI/Sprites/Teaching/icon_step_09.png",
+                    inputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_08_cone.png",
+                    outputMaterialPath = "Assets/_Project/UI/Sprites/Teaching/mat_09_asrs.png",
                     worldPosition = new Vector3(39.5f, 9.0f, 408.0f),
                     focusCameraPos = new Vector3(39.5f, 14.2f, 376.0f),
                     focusLookAtPos = new Vector3(39.5f, 8.8f, 424.0f),

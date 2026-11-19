@@ -20,6 +20,7 @@ namespace CNC.EditorTools
     {
         private const string ConfigsDir = "Assets/_Project/Configs";
         private const string StyleADir = "Assets/_Project/UI/Sprites/StyleA";
+        private const string TeachingDir = "Assets/_Project/UI/Sprites/Teaching";
         private const string LegacySpritesDir = "Assets/_Project/UI/Sprites";
         private const string FontsDir = "Assets/_Project/UI/Fonts";
 
@@ -43,24 +44,35 @@ namespace CNC.EditorTools
         private static Sprite _spDot;
         private static Sprite _spCrosshair;
 
-        // Style A VisionOS Palette
-        private static readonly Color ColWhite = new Color(0.97f, 0.98f, 1.0f, 1f);
-        private static readonly Color ColDarkText = new Color(0.06f, 0.09f, 0.16f, 1f);
-        private static readonly Color ColSubText = new Color(0.80f, 0.85f, 0.92f, 0.78f);
-        private static readonly Color ColSky = new Color(0.22f, 0.74f, 0.97f, 1f);
-        private static readonly Color ColSkySoft = new Color(0.49f, 0.83f, 0.99f, 1f);
-        private static readonly Color ColMint = new Color(0.20f, 0.83f, 0.60f, 1f);
-        private static readonly Color ColAmber = new Color(0.98f, 0.74f, 0.14f, 1f);
-        private static readonly Color ColTrack = new Color(1.0f, 1.0f, 1.0f, 0.14f);
-        private static readonly Color ColSep = new Color(1.0f, 1.0f, 1.0f, 0.16f);
+        // Teaching Studio Dedicated High-Clarity Sprites
+        private static Sprite _vaTeachCard;
+        private static Sprite _vaTeachDiagramBg;
+        private static Sprite _vaTeachStepIdle;
+        private static Sprite _vaTeachStepActive;
+        private static Sprite _vaTeachStepDone;
+        private static Sprite _vaNumBadge;
+        private static Sprite _spTeachArrow;
 
-        [MenuItem("CNC Optimize/Apply Style A (VisionOS) & Fix Smoke + Cameras + Walk")]
+        // Style A VisionOS High-Contrast Palette
+        private static readonly Color ColWhite = new Color(0.98f, 0.99f, 1.0f, 1f);
+        private static readonly Color ColDarkText = new Color(0.05f, 0.08f, 0.14f, 1f);
+        private static readonly Color ColSubText = new Color(0.86f, 0.91f, 0.97f, 0.90f);
+        private static readonly Color ColSky = new Color(0.22f, 0.76f, 0.99f, 1f);
+        private static readonly Color ColSkySoft = new Color(0.55f, 0.86f, 1.0f, 1f);
+        private static readonly Color ColMint = new Color(0.22f, 0.87f, 0.64f, 1f);
+        private static readonly Color ColAmber = new Color(0.99f, 0.77f, 0.18f, 1f);
+        private static readonly Color ColTrack = new Color(1.0f, 1.0f, 1.0f, 0.16f);
+        private static readonly Color ColSep = new Color(1.0f, 1.0f, 1.0f, 0.20f);
+
+        [MenuItem("CNC Optimize/Apply Style A (VisionOS) + Crisp Fonts + Visual Teaching Studio")]
         public static void Run()
         {
-            Debug.Log("[CNC StyleA] Applying Style A (VisionOS Frosted Glass) + Scene Fixes (Smoke, Cameras, Default Walk)...");
+            Debug.Log("[CNC StyleA] Rebuilding 72pt Noto Sans SC fonts, high-contrast Style A HUD, & Visual Teaching Studio...");
             Directory.CreateDirectory(ConfigsDir);
 
+            Step1_URPAndAssetSetup.RebuildCrispChineseFonts();
             ConfigureStyleASprites();
+            ConfigureTeachingSprites();
             LoadUiAssets();
 
             var catalog = CreateOrUpdateWorkshopCatalog();
@@ -69,7 +81,7 @@ namespace CNC.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[CNC StyleA] Style A Frontend & Scene Fixes completed cleanly!");
+            Debug.Log("[CNC StyleA] Crisp Fonts + Visual Teaching Studio + Scene Hardening completed cleanly!");
         }
 
         private static void ConfigureStyleASprites()
@@ -115,6 +127,33 @@ namespace CNC.EditorTools
             }
         }
 
+        private static void ConfigureTeachingSprites()
+        {
+            if (!Directory.Exists(TeachingDir)) return;
+            foreach (var f in Directory.GetFiles(TeachingDir, "*.png"))
+            {
+                string assetPath = f.Replace("\\", "/");
+                var ti = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (ti == null) continue;
+
+                string name = Path.GetFileNameWithoutExtension(assetPath);
+                ti.textureType = TextureImporterType.Sprite;
+                ti.spriteImportMode = SpriteImportMode.Single;
+                ti.mipmapEnabled = false;
+                ti.alphaIsTransparency = true;
+                ti.textureCompression = TextureImporterCompression.Uncompressed;
+                ti.filterMode = FilterMode.Bilinear;
+                ti.wrapMode = TextureWrapMode.Clamp;
+
+                if (name == "va_teach_card") ti.spriteBorder = new Vector4(28, 28, 28, 28);
+                else if (name == "va_teach_diagram_bg") ti.spriteBorder = new Vector4(20, 20, 20, 20);
+                else if (name.StartsWith("va_teach_step_")) ti.spriteBorder = new Vector4(20, 20, 20, 20);
+                else ti.spriteBorder = Vector4.zero;
+
+                ti.SaveAndReimport();
+            }
+        }
+
         private static void LoadUiAssets()
         {
             _fontReg = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>($"{FontsDir}/CNC_Sans_Regular_SDF.asset");
@@ -135,6 +174,14 @@ namespace CNC.EditorTools
             _vaSlotTile        = LoadSp($"{StyleADir}/va_slot_tile.png");
             _spDot             = LoadSp($"{LegacySpritesDir}/ui_circle_dot.png");
             _spCrosshair       = LoadSp($"{LegacySpritesDir}/ui_crosshair.png");
+
+            _vaTeachCard       = LoadSp($"{TeachingDir}/va_teach_card.png") ?? _vaCardGlass;
+            _vaTeachDiagramBg  = LoadSp($"{TeachingDir}/va_teach_diagram_bg.png") ?? _vaSubcard;
+            _vaTeachStepIdle   = LoadSp($"{TeachingDir}/va_teach_step_idle.png") ?? _vaSubcard;
+            _vaTeachStepActive = LoadSp($"{TeachingDir}/va_teach_step_active.png") ?? _vaPillActiveSky;
+            _vaTeachStepDone   = LoadSp($"{TeachingDir}/va_teach_step_done.png") ?? _vaSubcard;
+            _vaNumBadge        = LoadSp($"{TeachingDir}/va_num_badge.png") ?? _spDot;
+            _spTeachArrow      = LoadSp($"{TeachingDir}/teach_arrow_right.png");
         }
 
         private static Sprite LoadSp(string path) => AssetDatabase.LoadAssetAtPath<Sprite>(path);
@@ -154,6 +201,12 @@ namespace CNC.EditorTools
             {
                 if (!string.IsNullOrEmpty(st.previewSpritePath))
                     st.previewSprite = AssetDatabase.LoadAssetAtPath<Sprite>(st.previewSpritePath);
+                if (!string.IsNullOrEmpty(st.processIconPath))
+                    st.processIconSprite = AssetDatabase.LoadAssetAtPath<Sprite>(st.processIconPath);
+                if (!string.IsNullOrEmpty(st.inputMaterialPath))
+                    st.inputMaterialSprite = AssetDatabase.LoadAssetAtPath<Sprite>(st.inputMaterialPath);
+                if (!string.IsNullOrEmpty(st.outputMaterialPath))
+                    st.outputMaterialSprite = AssetDatabase.LoadAssetAtPath<Sprite>(st.outputMaterialPath);
             }
             EditorUtility.SetDirty(catalog);
             return catalog;
@@ -749,67 +802,70 @@ namespace CNC.EditorTools
             }
         }
 
-        // ==================== STYLE A VISIONOS HUD BUILDER ====================
+        // ==================== STYLE A VISIONOS HUD + VISUAL TEACHING STUDIO BUILDER ====================
 
         private static void BuildStyleAHud(WorkshopCatalog catalog)
         {
             var canvasGo = CreateResponsiveCanvas("HUD_Canvas", 10);
             var hud = canvasGo.AddComponent<DigitalTwinHUD>();
 
-            // Wire Style A pill sprites
+            // Wire Style A pill & teaching sprites
             hud.spPillActiveWhite = _vaPillActiveWhite;
             hud.spPillActiveSky = _vaPillActiveSky;
             hud.spPillIdle = _vaPillIdle;
             hud.spPillGhost = _vaPillGhost;
             hud.spPillGreen = _vaPillGreen;
             hud.spPillDanger = _vaPillDanger;
+            hud.spTeachStepIdle = _vaTeachStepIdle;
+            hud.spTeachStepActive = _vaTeachStepActive;
+            hud.spTeachStepDone = _vaTeachStepDone;
 
             var main = CreateUiRect("HUD_MainContainer", canvasGo.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             hud.hudMainContainer = main;
 
-            // ==================== 1. TOP 3 FLOATING GLASS PILLS (NO HEAVY BAR!) ====================
+            // ==================== 1. TOP 3 FLOATING GLASS PILLS (LARGE CRISP FONTS) ====================
 
             // 1A. Top-Left Brand Pill
             var topLeft = CreateUiRect("TopLeftPill", main.transform, new Vector2(0, 1), new Vector2(0, 1),
-                new Vector2(24, -72), new Vector2(364, -22));
+                new Vector2(24, -70), new Vector2(394, -18));
             AddSliced(topLeft, _vaPillGlass, Color.white);
             var bdot = CreateUiRect("Dot", topLeft.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(18, -5), new Vector2(28, 5));
             var bdotImg = bdot.AddComponent<UIImage>();
             bdotImg.sprite = _spDot;
             bdotImg.color = ColMint;
-            CreateTmp("BrandTitle", topLeft.transform, "棉纺智能工厂数字孪生", 15, true, ColWhite,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(0, 1), new Vector2(38, 0), new Vector2(214, 0));
-            CreateDividerV(topLeft.transform, 218, 18);
-            hud.statusSummaryText = CreateTmp("StatusSub", topLeft.transform, "9/9 工段在线", 12, false, ColSubText,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(1, 1), new Vector2(228, 0), new Vector2(-14, 0));
+            CreateTmp("BrandTitle", topLeft.transform, "棉纺智能工厂数字孪生", 16.5f, true, ColWhite,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(0, 1), new Vector2(38, 0), new Vector2(236, 0));
+            CreateDividerV(topLeft.transform, 240, 20);
+            hud.statusSummaryText = CreateTmp("StatusSub", topLeft.transform, "9/9 工段在线", 14f, true, ColSubText,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(1, 1), new Vector2(252, 0), new Vector2(-14, 0));
 
             // 1B. Top-Center Navigation Pill (Mode | Camera | Hall + Roof)
             var topMid = CreateUiRect("TopCenterPill", main.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(-386, -72), new Vector2(386, -22));
+                new Vector2(-394, -70), new Vector2(394, -18));
             AddSliced(topMid, _vaPillGlass, Color.white);
 
             float mx = 8f;
-            hud.btnModeDashboard = CreateSegBtn("BtnModeDash", topMid.transform, "产线监控", ref mx, 86, _vaPillActiveWhite, ColDarkText);
-            hud.btnModeTeaching  = CreateSegBtn("BtnModeTeach", topMid.transform, "工艺实训", ref mx, 86, _vaPillGhost, ColSubText);
-            mx += 6f; CreateDividerV(topMid.transform, mx, 20); mx += 8f;
+            hud.btnModeDashboard = CreateSegBtn("BtnModeDash", topMid.transform, "产线监控", ref mx, 92, _vaPillActiveWhite, ColDarkText);
+            hud.btnModeTeaching  = CreateSegBtn("BtnModeTeach", topMid.transform, "工艺实训", ref mx, 92, _vaPillGhost, ColSubText);
+            mx += 6f; CreateDividerV(topMid.transform, mx, 22); mx += 8f;
 
-            hud.btnCamFps   = CreateSegBtn("BtnCamFps",   topMid.transform, "自由漫游", ref mx, 86, _vaPillActiveSky, ColWhite);
-            hud.btnCamOrbit = CreateSegBtn("BtnCamOrbit", topMid.transform, "鸟瞰全景", ref mx, 86, _vaPillGhost, ColSubText);
-            hud.btnCamTour  = CreateSegBtn("BtnCamTour",  topMid.transform, "自动巡检", ref mx, 86, _vaPillGhost, ColSubText);
-            mx += 6f; CreateDividerV(topMid.transform, mx, 20); mx += 8f;
+            hud.btnCamFps   = CreateSegBtn("BtnCamFps",   topMid.transform, "自由漫游", ref mx, 92, _vaPillActiveSky, ColWhite);
+            hud.btnCamOrbit = CreateSegBtn("BtnCamOrbit", topMid.transform, "鸟瞰全景", ref mx, 92, _vaPillGhost, ColSubText);
+            hud.btnCamTour  = CreateSegBtn("BtnCamTour",  topMid.transform, "自动巡检", ref mx, 92, _vaPillGhost, ColSubText);
+            mx += 6f; CreateDividerV(topMid.transform, mx, 22); mx += 8f;
 
-            hud.btnHall1       = CreateSegBtn("BtnHall1",   topMid.transform, "主车间", ref mx, 74, _vaPillActiveSky, ColWhite);
-            hud.btnHall2       = CreateSegBtn("BtnHall2",   topMid.transform, "立体库", ref mx, 74, _vaPillGhost, ColSubText);
-            hud.btnRoofCutaway = CreateSegBtn("BtnRoofCut", topMid.transform, "屋顶透视", ref mx, 84, _vaPillGhost, ColSubText);
+            hud.btnHall1       = CreateSegBtn("BtnHall1",   topMid.transform, "主车间", ref mx, 80, _vaPillActiveSky, ColWhite);
+            hud.btnHall2       = CreateSegBtn("BtnHall2",   topMid.transform, "立体库", ref mx, 80, _vaPillGhost, ColSubText);
+            hud.btnRoofCutaway = CreateSegBtn("BtnRoofCut", topMid.transform, "屋顶透视", ref mx, 92, _vaPillGhost, ColSubText);
 
             // 1C. Top-Right Utility Pill (Clock + Circular Minimal Icon Buttons)
             var topRight = CreateUiRect("TopRightPill", main.transform, new Vector2(1, 1), new Vector2(1, 1),
-                new Vector2(-340, -72), new Vector2(-24, -22));
+                new Vector2(-362, -70), new Vector2(-24, -18));
             AddSliced(topRight, _vaPillGlass, Color.white);
-            hud.clockText = CreateTmp("Clock", topRight.transform, "21:35:08", 13, true, ColWhite,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(0, 1), new Vector2(18, 0), new Vector2(92, 0));
+            hud.clockText = CreateTmp("Clock", topRight.transform, "21:35:08", 15f, true, ColWhite,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(0, 1), new Vector2(18, 0), new Vector2(102, 0));
 
-            float ux = 96f;
+            float ux = 104f;
             hud.btnToggleMarkers = CreateCircleIconBtn("BtnTag",  topRight.transform, "标", ref ux);
             hud.btnToggleHud     = CreateCircleIconBtn("BtnHide", topRight.transform, "隐", ref ux);
             hud.btnOpenSettings  = CreateCircleIconBtn("BtnSet",  topRight.transform, "设", ref ux);
@@ -817,45 +873,43 @@ namespace CNC.EditorTools
             hud.btnReturnHome    = CreateCircleIconBtn("BtnHome", topRight.transform, "主", ref ux);
             hud.btnRequestQuit   = CreateCircleIconBtn("BtnQuit", topRight.transform, "×",  ref ux);
 
-            // ==================== 2. LEFT FLOATING COMPACT GLASS ISLAND (418px tall!) ====================
+            // ==================== 2. DASHBOARD LEFT COMPACT GLASS ISLAND (CRISP LARGE TEXT) ====================
             var leftCard = CreateUiRect("LeftGlassIsland", main.transform, new Vector2(0, 1), new Vector2(0, 1),
-                new Vector2(24, -504), new Vector2(320, -86));
-            // Use top-left pivot so height smoothly expands for Teaching Mode
+                new Vector2(24, -536), new Vector2(354, -84));
             var lrt = leftCard.GetComponent<RectTransform>();
             lrt.pivot = new Vector2(0, 1);
-            lrt.anchoredPosition = new Vector2(24, -86);
-            lrt.sizeDelta = new Vector2(296, 418);
+            lrt.anchoredPosition = new Vector2(24, -84);
+            lrt.sizeDelta = new Vector2(330, 452);
             AddSliced(leftCard, _vaCardGlass, Color.white);
             hud.leftPanelRoot = leftCard;
             hud.leftPanelRect = lrt;
 
-            // --- 2A. Compact Dashboard Island (leaves bottom-left 55% open!) ---
             var dashRoot = CreateUiRect("DashboardContent", leftCard.transform, Vector2.zero, Vector2.one, new Vector2(18, 18), new Vector2(-18, -18));
             hud.dashboardLeftContent = dashRoot;
 
-            CreateTmp("HdrL", dashRoot.transform, "实时生产概览", 13, true, ColSubText, TextAlignmentOptions.MidlineLeft,
-                new Vector2(0, 1), new Vector2(0.65f, 1), new Vector2(2, -22), new Vector2(0, 0));
-            CreateTmp("HdrR", dashRoot.transform, "<color=#34D399>● 正常</color>", 12, true, ColMint, TextAlignmentOptions.MidlineRight,
+            CreateTmp("HdrL", dashRoot.transform, "实时生产概览", 15.5f, true, ColWhite, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0, 1), new Vector2(0.65f, 1), new Vector2(2, -24), new Vector2(0, 0));
+            CreateTmp("HdrR", dashRoot.transform, "<color=#34D399>● 正常</color>", 14f, true, ColMint, TextAlignmentOptions.MidlineRight,
                 new Vector2(0.6f, 1), new Vector2(1, 1), Vector2.zero, new Vector2(-2, 0));
 
-            // 2x2 Airy KPI Subcards
-            hud.kpiOutputText         = CreateKpiSubcard(dashRoot.transform, "今日累计产量", "1,842 kg", ColWhite, 0, -34);
-            hud.kpiPassRateText       = CreateKpiSubcard(dashRoot.transform, "视觉分拣良率", "97.8%",    ColMint,  136, -34);
-            hud.kpiOeeText            = CreateKpiSubcard(dashRoot.transform, "综合效率 OEE", "91.4%",    ColSky,   0, -118);
-            hud.kpiWarehouseShortText = CreateKpiSubcard(dashRoot.transform, "立体库货位",   "11 / 16",  ColWhite, 136, -118);
+            // 2x2 Airy High-Clarity KPI Subcards
+            hud.kpiOutputText         = CreateKpiSubcard(dashRoot.transform, "今日累计产量", "1,842 kg", ColWhite, 0, -36);
+            hud.kpiPassRateText       = CreateKpiSubcard(dashRoot.transform, "视觉分拣良率", "97.8%",    ColMint,  152, -36);
+            hud.kpiOeeText            = CreateKpiSubcard(dashRoot.transform, "综合效率 OEE", "91.4%",    ColSky,   0, -126);
+            hud.kpiWarehouseShortText = CreateKpiSubcard(dashRoot.transform, "立体库货位",   "11 / 16",  ColWhite, 152, -126);
 
             // Compact 8x2 Warehouse Occupancy Matrix
-            CreateTmp("WhLbl", dashRoot.transform, "立体库货位矩阵", 12, false, ColSubText, TextAlignmentOptions.MidlineLeft,
-                new Vector2(0, 1), new Vector2(0.7f, 1), new Vector2(2, -226), new Vector2(0, -204));
-            hud.warehouseOccupancyText = CreateTmp("WhPct", dashRoot.transform, "68.8%", 12, true, ColSkySoft, TextAlignmentOptions.MidlineRight,
-                new Vector2(0.65f, 1), new Vector2(1, 1), Vector2.zero, new Vector2(-2, -204));
+            CreateTmp("WhLbl", dashRoot.transform, "立体库货位矩阵", 14.5f, true, ColSubText, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0, 1), new Vector2(0.7f, 1), new Vector2(2, -244), new Vector2(0, -218));
+            hud.warehouseOccupancyText = CreateTmp("WhPct", dashRoot.transform, "68.8%", 14.5f, true, ColSkySoft, TextAlignmentOptions.MidlineRight,
+                new Vector2(0.65f, 1), new Vector2(1, 1), Vector2.zero, new Vector2(-2, -218));
 
-            var whGridGo = CreateUiRect("WhMatrix", dashRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -278), new Vector2(0, -234));
+            var whGridGo = CreateUiRect("WhMatrix", dashRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -298), new Vector2(0, -252));
             var glg = whGridGo.AddComponent<GridLayoutGroup>();
             glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             glg.constraintCount = 8;
-            glg.cellSize = new Vector2(28, 18);
-            glg.spacing = new Vector2(5, 6);
+            glg.cellSize = new Vector2(31, 19);
+            glg.spacing = new Vector2(6, 6);
             glg.childAlignment = TextAnchor.MiddleCenter;
             for (int s = 0; s < 16; s++)
             {
@@ -869,132 +923,60 @@ namespace CNC.EditorTools
             }
 
             // Minimal 2-line Live Status Feed Pill
-            var logBox = CreateUiRect("MiniLog", dashRoot.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -294));
+            var logBox = CreateUiRect("MiniLog", dashRoot.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -314));
             AddSliced(logBox, _vaSubcard, Color.white);
-            hud.eventLogText = CreateTmp("LogTxt", logBox.transform, "<color=#34D399>●</color> 全厂 9 大纺纱工段运行平稳", 12, false, ColWhite,
+            hud.eventLogText = CreateTmp("LogTxt", logBox.transform, "<color=#34D399>●</color> 全厂 9 大纺纱工段运行平稳", 14f, false, ColWhite,
                 TextAlignmentOptions.MidlineLeft, Vector2.zero, Vector2.one, new Vector2(12, 8), new Vector2(-12, -8));
-            hud.eventLogText.lineSpacing = 8f;
+            hud.eventLogText.lineSpacing = 6f;
 
-            // --- 2B. Teaching Tour Left Content (Cleanly styled in Style A VisionOS) ---
-            var teachRoot = CreateUiRect("TeachingContent", leftCard.transform, Vector2.zero, Vector2.one, new Vector2(18, 18), new Vector2(-18, -18));
-            hud.teachingLeftContent = teachRoot;
-
-            hud.teachingProgressText = CreateTmp("ProgTxt", teachRoot.transform, "实训进度  已学 1/9  ·  考核 0/9", 13, true, ColWhite,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -22), Vector2.zero);
-            var pt = CreateUiRect("ProgTrack", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -36), new Vector2(0, -28));
-            AddSliced(pt, _vaBarPill, ColTrack);
-            hud.teachingProgressBar = CreateBarFill(pt.transform, ColSky, 0.11f);
-
-            hud.btnPrevStation = CreateStyleAButton("BtnPrevSt", teachRoot.transform, "< 上一工序", 12, true, _vaPillIdle, ColWhite,
-                new Vector2(0, 1), new Vector2(0.5f, 1), new Vector2(0, -74), new Vector2(-4, -44));
-            hud.btnNextStation = CreateStyleAButton("BtnNextSt", teachRoot.transform, "下一工序 >", 12, true, _vaPillActiveWhite, ColDarkText,
-                new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(4, -74), new Vector2(0, -44));
-
-            // 3x3 Clean Rounded Step Pills (compact 648px total Teaching Island for wide Game Views)
-            var sgrid = CreateUiRect("StepGrid", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -196), new Vector2(0, -82));
-            var sglg = sgrid.AddComponent<GridLayoutGroup>();
-            sglg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            sglg.constraintCount = 3;
-            sglg.cellSize = new Vector2(82, 34);
-            sglg.spacing = new Vector2(6, 5);
-            sglg.childAlignment = TextAnchor.MiddleCenter;
-            for (int i = 0; i < 9; i++)
-            {
-                var st = catalog.stations[i];
-                var sbGo = new GameObject($"TStep_{i}");
-                sbGo.transform.SetParent(sgrid.transform, false);
-                var img = AddSliced(sbGo, _vaSubcard, Color.white);
-                var btn = sbGo.AddComponent<Button>();
-                btn.targetGraphic = img;
-                hud.teachingStepButtons[i] = btn;
-                CreateTmp("N", sbGo.transform, $"{i + 1:00} {st.shortName}", 11, true, ColWhite, TextAlignmentOptions.Center,
-                    new Vector2(0, 0.44f), new Vector2(1, 1), new Vector2(2, 0), new Vector2(-2, -2));
-                hud.teachingStepCheckTexts[i] = CreateTmp("C", sbGo.transform, "待学", 10, false, ColSubText, TextAlignmentOptions.Center,
-                    new Vector2(0, 0), new Vector2(1, 0.48f), Vector2.zero, Vector2.zero);
-            }
-
-            // Teaching Goal & Key Points Subcard
-            var goalBox = CreateUiRect("GoalBox", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -396), new Vector2(0, -204));
-            AddSliced(goalBox, _vaSubcard, Color.white);
-            hud.teachingGoalText = CreateTmp("GoalTxt", goalBox.transform, "", 11.5f, false, ColWhite, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0.56f), new Vector2(1, 1), new Vector2(12, 2), new Vector2(-12, -8));
-            hud.teachingKeyPointsText = CreateTmp("KeyPtsTxt", goalBox.transform, "", 10.5f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 0.56f), new Vector2(12, 6), new Vector2(-12, 0));
-            hud.teachingKeyPointsText.lineSpacing = 2.0f;
-
-            // Interactive Quiz Subcard
-            var quizBox = CreateUiRect("QuizBox", teachRoot.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -404));
-            AddSliced(quizBox, _vaSubcard, Color.white);
-            hud.quizQuestionText = CreateTmp("QuizQ", quizBox.transform, "随堂考核...", 12f, true, ColWhite, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(12, -52), new Vector2(-12, -8));
-            for (int q = 0; q < 3; q++)
-            {
-                float yTop = -54 - q * 36;
-                var qBtn = CreateStyleAButton($"QuizOpt_{q}", quizBox.transform, $"选项 {q + 1}", 11f, false, _vaPillIdle, ColWhite,
-                    new Vector2(0, 1), new Vector2(1, 1), new Vector2(10, yTop - 30), new Vector2(-10, yTop));
-                var qTxt = qBtn.GetComponentInChildren<TextMeshProUGUI>();
-                qTxt.alignment = TextAlignmentOptions.MidlineLeft;
-                qTxt.margin = new Vector4(12, 2, 10, 2);
-                hud.quizOptionButtons[q] = qBtn;
-                hud.quizOptionTexts[q] = qTxt;
-            }
-            hud.quizFeedbackText = CreateTmp("QuizFb", quizBox.transform, "", 11f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 0), new Vector2(12, 6), new Vector2(-12, 46));
-            teachRoot.SetActive(false);
-
-            // ==================== 3. RIGHT FLOATING AIRY DEVICE INSPECTOR (626px tall, crisp breathing room!) ====================
+            // ==================== 3. DASHBOARD RIGHT FLOATING DEVICE INSPECTOR (LARGE CRISP TEXT) ====================
             var rightCard = CreateUiRect("RightGlassDrawer", main.transform, new Vector2(1, 1), new Vector2(1, 1),
-                new Vector2(-350, -712), new Vector2(-24, -86));
+                new Vector2(-412, -756), new Vector2(-24, -84));
             AddSliced(rightCard, _vaCardGlass, Color.white);
             hud.rightPanelRoot = rightCard;
 
             var rb = CreateUiRect("RightBody", rightCard.transform, Vector2.zero, Vector2.one, new Vector2(20, 18), new Vector2(-20, -18));
 
-            // Top badge + Name + Emerald Remote Toggle Pill
-            var badgePill = CreateUiRect("CodeBadge", rb.transform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -24), new Vector2(138, 0));
+            var badgePill = CreateUiRect("CodeBadge", rb.transform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -28), new Vector2(162, 0));
             AddSliced(badgePill, _vaPillActiveSky, Color.white);
-            hud.inspectorCodeText = CreateTmp("Code", badgePill.transform, "ST-01 · 抓棉开松", 11.5f, true, ColSkySoft,
+            hud.inspectorCodeText = CreateTmp("Code", badgePill.transform, "ST-01 · 抓棉开松", 13.5f, true, ColSkySoft,
                 TextAlignmentOptions.Center, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            hud.btnToggleStationRun = CreateStyleAButton("BtnRemoteToggle", rb.transform, "● 运行中", 12, true, _vaPillGreen,
-                new Color(0.43f, 0.91f, 0.72f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-94, -30), new Vector2(0, 0));
+            hud.btnToggleStationRun = CreateStyleAButton("BtnRemoteToggle", rb.transform, "● 运行中", 14f, true, _vaPillGreen,
+                new Color(0.46f, 0.96f, 0.76f), new Vector2(1, 1), new Vector2(1, 1), new Vector2(-108, -32), new Vector2(0, 0));
             hud.btnToggleStationRunLabel = hud.btnToggleStationRun.GetComponentInChildren<TextMeshProUGUI>();
 
-            hud.inspectorNameText = CreateTmp("DevName", rb.transform, "往复抓棉机（开松混棉）", 19, true, ColWhite,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -60), new Vector2(0, -30));
-            hud.inspectorEngNameText = CreateTmp("DevEng", rb.transform, "AUTOMATIC BALE OPENER", 11, false, ColSubText,
-                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -78), new Vector2(0, -58));
+            hud.inspectorNameText = CreateTmp("DevName", rb.transform, "往复抓棉机（开松混棉）", 21.5f, true, ColWhite,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -68), new Vector2(0, -34));
+            hud.inspectorEngNameText = CreateTmp("DevEng", rb.transform, "AUTOMATIC BALE OPENER", 12.5f, false, ColSubText,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -88), new Vector2(0, -66));
 
-            // Clean Rounded Preview Photo
-            var pFrame = CreateUiRect("PreviewFrame", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -210), new Vector2(0, -86));
+            var pFrame = CreateUiRect("PreviewFrame", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -214), new Vector2(0, -96));
             AddSliced(pFrame, _vaSubcard, Color.white);
             var pImgGo = CreateUiRect("PreviewImg", pFrame.transform, Vector2.zero, Vector2.one, new Vector2(6, 6), new Vector2(-6, -6));
             hud.inspectorPreviewImage = pImgGo.AddComponent<UIImage>();
             hud.inspectorPreviewImage.preserveAspect = true;
 
-            // 3 Sleek Rounded Telemetry Bars (44px clean vertical stride, zero label/bar touch!)
-            CreateStyleATelemetryRow(rb.transform, "工作转速", -222, ColSky, out hud.telemetryRpmText, out hud.telemetryRpmBar);
-            CreateStyleATelemetryRow(rb.transform, "电机温度", -266, ColAmber, out hud.telemetryTempText, out hud.telemetryTempBar);
-            CreateStyleATelemetryRow(rb.transform, "实时负荷与功耗", -310, ColMint, out hud.telemetryLoadText, out hud.telemetryLoadBar);
+            CreateStyleATelemetryRow(rb.transform, "工作转速", -226, ColSky, out hud.telemetryRpmText, out hud.telemetryRpmBar);
+            CreateStyleATelemetryRow(rb.transform, "电机温度", -274, ColAmber, out hud.telemetryTempText, out hud.telemetryTempBar);
+            CreateStyleATelemetryRow(rb.transform, "实时负荷与功耗", -322, ColMint, out hud.telemetryLoadText, out hud.telemetryLoadBar);
 
-            // Hairline Divider
-            var hdiv = CreateUiRect("HDiv", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -360), new Vector2(0, -359));
+            var hdiv = CreateUiRect("HDiv", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -374), new Vector2(0, -373));
             hdiv.AddComponent<UIImage>().color = ColSep;
 
-            // Clean Spec Rows (5 crisp rows with generous non-overlapping spacing)
-            hud.specsTableText = CreateTmp("SpecsTxt", rb.transform, "", 12.5f, false, ColWhite, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -490), new Vector2(0, -370));
-            hud.specsTableText.lineSpacing = 7f;
+            hud.specsTableText = CreateTmp("SpecsTxt", rb.transform, "", 15f, false, ColWhite, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -514), new Vector2(0, -384));
+            hud.specsTableText.lineSpacing = 6f;
 
-            // Clean Airy Summary
-            hud.processSummaryText = CreateTmp("SumTxt", rb.transform, "", 12f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -498));
-            hud.processSummaryText.lineSpacing = 5f;
+            hud.processSummaryText = CreateTmp("SumTxt", rb.transform, "", 14.5f, false, ColSubText, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -522));
+            hud.processSummaryText.lineSpacing = 4f;
 
-            // ==================== 4. BOTTOM FLOATING CENTERED MACOS-STYLE DOCK ====================
+            // ==================== 4. DASHBOARD BOTTOM FLOATING PROCESS DOCK ====================
             var dock = CreateUiRect("BottomProcessDock", main.transform, new Vector2(0.5f, 0), new Vector2(0.5f, 0),
-                new Vector2(-536, 22), new Vector2(536, 74));
+                new Vector2(-558, 18), new Vector2(558, 74));
             AddSliced(dock, _vaPillGlass, Color.white);
+            hud.bottomDockRoot = dock;
 
             float dx = 10f;
             for (int i = 0; i < 9; i++)
@@ -1002,53 +984,56 @@ namespace CNC.EditorTools
                 var st = catalog.stations[i];
                 string shortLbl = st.shortName.Length > 3 ? st.shortName.Substring(0, 2) : st.shortName;
                 if (i == 8) shortLbl = "立体库";
-                float w = i == 8 ? 92f : 84f;
-                var nodeBtn = CreateStyleAButton($"DockNode_{i + 1}", dock.transform, $"<color=#94A3B8>{i + 1:00}</color> {shortLbl}", 13, true,
-                    _vaPillGhost, ColWhite, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -19), new Vector2(dx + w, 19));
+                float w = i == 8 ? 102f : 92f;
+                var nodeBtn = CreateStyleAButton($"DockNode_{i + 1}", dock.transform, $"<color=#94A3B8>{i + 1:00}</color> {shortLbl}", 15f, true,
+                    _vaPillGhost, ColWhite, new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -20), new Vector2(dx + w, 20));
                 hud.flowNodeButtons[i] = nodeBtn;
                 dx += w + 4f;
             }
 
-            dx += 4f; CreateDividerV(dock.transform, dx, 22); dx += 10f;
+            dx += 4f; CreateDividerV(dock.transform, dx, 24); dx += 10f;
 
-            hud.btnSimPlayPause = CreateStyleAButton("BtnPlayPause", dock.transform, "暂停", 13, true, _vaPillActiveWhite, ColDarkText,
-                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -19), new Vector2(dx + 68, 19));
+            hud.btnSimPlayPause = CreateStyleAButton("BtnPlayPause", dock.transform, "暂停", 15f, true, _vaPillActiveWhite, ColDarkText,
+                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -20), new Vector2(dx + 72, 20));
             hud.btnSimPlayPauseLabel = hud.btnSimPlayPause.GetComponentInChildren<TextMeshProUGUI>();
-            dx += 74f;
+            dx += 78f;
 
-            hud.btnSpeedCycle = CreateStyleAButton("BtnSpeed", dock.transform, "1x", 13, true, _vaPillIdle, ColWhite,
-                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -19), new Vector2(dx + 52, 19));
+            hud.btnSpeedCycle = CreateStyleAButton("BtnSpeed", dock.transform, "1x", 15f, true, _vaPillIdle, ColWhite,
+                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -20), new Vector2(dx + 56, 20));
             hud.btnSpeedCycleLabel = hud.btnSpeedCycle.GetComponentInChildren<TextMeshProUGUI>();
-            dx += 58f;
+            dx += 62f;
 
-            hud.btnCollapseSidePanels = CreateStyleAButton("BtnCollapse", dock.transform, "极简", 12.5f, false, _vaPillIdle, ColSubText,
-                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -19), new Vector2(dx + 58, 19));
+            hud.btnCollapseSidePanels = CreateStyleAButton("BtnCollapse", dock.transform, "极简", 14.5f, true, _vaPillIdle, ColSubText,
+                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(dx, -20), new Vector2(dx + 64, 20));
             hud.btnCollapseLabel = hud.btnCollapseSidePanels.GetComponentInChildren<TextMeshProUGUI>();
 
-            // ==================== 5. CROSSHAIR, FPS HINT PILL, TOOLTIP & MODALS ====================
+            // ==================== 5. DEDICATED VISUAL TEACHING STUDIO (工艺实训大改版!) ====================
+            BuildVisualTeachingStudio(main.transform, hud, catalog);
+
+            // ==================== 6. CROSSHAIR, FPS HINT PILL, TOOLTIP & MODALS ====================
             var crossGo = CreateUiRect("FPS_Crosshair", canvasGo.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
                 new Vector2(-18, -18), new Vector2(18, 18));
             var crossImg = crossGo.AddComponent<UIImage>();
             crossImg.sprite = _spCrosshair;
-            crossImg.color = new Color(1f, 1f, 1f, 0.78f);
+            crossImg.color = new Color(1f, 1f, 1f, 0.82f);
             crossImg.raycastTarget = false;
             crossGo.SetActive(false);
             hud.crosshairObject = crossGo;
 
             var hintGo = CreateUiRect("FPS_HintPill", canvasGo.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(-286, -112), new Vector2(286, -82));
-            var hintImg = AddSliced(hintGo, _vaPillGlass, new Color(0.75f, 0.80f, 0.88f, 0.96f));
+                new Vector2(-336, -114), new Vector2(336, -80));
+            var hintImg = AddSliced(hintGo, _vaPillGlass, Color.white);
             hintImg.raycastTarget = false;
-            var hintTxt = CreateTmp("HintTxt", hintGo.transform, "自由漫游：WASD 行走 · Shift 加速 · 右键拖拽看四周 · Tab 锁准星 · R 复位", 12, true, ColWhite,
-                TextAlignmentOptions.Center, Vector2.zero, Vector2.one, new Vector2(14, 0), new Vector2(-14, 0));
+            var hintTxt = CreateTmp("HintTxt", hintGo.transform, "自由漫游：WASD 行走 · Shift 加速 · 右键拖拽看四周 · Tab 锁准星 · R 复位", 14.5f, true, ColWhite,
+                TextAlignmentOptions.Center, Vector2.zero, Vector2.one, new Vector2(16, 0), new Vector2(-16, 0));
             hintTxt.raycastTarget = false;
             hud.fpsHintBanner = hintGo;
 
-            var tipGo = CreateUiRect("HoverTooltip", canvasGo.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(260, 58));
-            var tipBg = AddSliced(tipGo, _vaCardGlass, Color.white);
+            var tipGo = CreateUiRect("HoverTooltip", canvasGo.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(310, 68));
+            var tipBg = AddSliced(tipGo, _vaTeachCard, Color.white);
             tipBg.raycastTarget = false;
-            hud.hoverTooltipText = CreateTmp("TipTxt", tipGo.transform, "", 12.5f, true, ColWhite, TextAlignmentOptions.MidlineLeft,
-                Vector2.zero, Vector2.one, new Vector2(14, 4), new Vector2(-14, -4));
+            hud.hoverTooltipText = CreateTmp("TipTxt", tipGo.transform, "", 15f, true, ColWhite, TextAlignmentOptions.MidlineLeft,
+                Vector2.zero, Vector2.one, new Vector2(16, 6), new Vector2(-16, -6));
             hud.hoverTooltipText.raycastTarget = false;
             tipGo.SetActive(false);
             hud.hoverTooltipRoot = tipGo;
@@ -1057,6 +1042,250 @@ namespace CNC.EditorTools
                 out hud.btnQualUltra, out hud.sensSlider, out hud.sensValueText, out hud.btnCloseSettings);
             hud.helpModal = BuildStyleAHelpModal(canvasGo.transform, out hud.btnCloseHelp);
             hud.quitConfirmModal = BuildStyleAQuitModal(canvasGo.transform, out hud.btnConfirmQuit, out hud.btnCancelQuit);
+        }
+
+        private static void BuildVisualTeachingStudio(Transform mainParent, DigitalTwinHUD hud, WorkshopCatalog catalog)
+        {
+            // ----- 5A. TOP 9-STEP ILLUSTRATED SPINNING PROCESS FLOWCHART RIBBON -----
+            var ribbon = CreateUiRect("TeachingFlowRibbon", mainParent, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
+                new Vector2(-930, -168), new Vector2(930, -78));
+            AddSliced(ribbon, _vaTeachCard, Color.white);
+            hud.teachingFlowRibbonRoot = ribbon;
+
+            float rx = 16f;
+            for (int i = 0; i < 9; i++)
+            {
+                var st = catalog.stations[i];
+                var stepGo = CreateUiRect($"TeachFlowStep_{i + 1:00}", ribbon.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+                    new Vector2(rx, -36), new Vector2(rx + 180f, 36));
+                var stepBg = AddSliced(stepGo, i == 0 ? _vaTeachStepActive : _vaTeachStepIdle, Color.white);
+                var btn = stepGo.AddComponent<Button>();
+                btn.targetGraphic = stepBg;
+                var cols = btn.colors;
+                cols.normalColor = Color.white;
+                cols.highlightedColor = new Color(1f, 1f, 1f, 0.94f);
+                cols.pressedColor = new Color(0.84f, 0.93f, 1f, 0.92f);
+                btn.colors = cols;
+                hud.teachingStepButtons[i] = btn;
+
+                // Illustrated process icon (46x46)
+                var iconGo = CreateUiRect("Icon", stepGo.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+                    new Vector2(8, -23), new Vector2(54, 23));
+                var iconImg = iconGo.AddComponent<UIImage>();
+                iconImg.sprite = st.processIconSprite;
+                iconImg.preserveAspect = true;
+                iconImg.raycastTarget = false;
+                hud.teachingStepIcons[i] = iconImg;
+
+                // Step Status Tag (12.5px Bold)
+                var statTxt = CreateTmp("Status", stepGo.transform, i == 0 ? $"<color=#BAE6FD>01 当前讲解</color>" : $"<color=#94A3B8>{i + 1:00} 待学习</color>",
+                    12.5f, true, ColSubText, TextAlignmentOptions.MidlineLeft,
+                    new Vector2(0, 0.52f), new Vector2(1, 1), new Vector2(60, 0), new Vector2(-6, -6));
+                statTxt.raycastTarget = false;
+                hud.teachingStepCheckTexts[i] = statTxt;
+
+                // Step Process Title (16px Bold)
+                var nameTxt = CreateTmp("Title", stepGo.transform, st.shortName, 16f, true, ColWhite,
+                    TextAlignmentOptions.MidlineLeft, new Vector2(0, 0), new Vector2(1, 0.56f), new Vector2(60, 6), new Vector2(-6, 0));
+                nameTxt.raycastTarget = false;
+
+                rx += 180f;
+                if (i < 8)
+                {
+                    var arrGo = CreateUiRect($"FlowArrow_{i + 1}", ribbon.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+                        new Vector2(rx + 2f, -11), new Vector2(rx + 24f, 11));
+                    var arrImg = arrGo.AddComponent<UIImage>();
+                    arrImg.sprite = _spTeachArrow;
+                    arrImg.preserveAspect = true;
+                    arrImg.raycastTarget = false;
+                    rx += 26f;
+                }
+            }
+
+            // ----- 5B. LEFT LARGE VISUAL TEACHING STUDIO CARD (AUTO-STRETCHES 747px..880px TALL!) -----
+            var studio = CreateUiRect("TeachingStudioCard", mainParent, new Vector2(0, 0), new Vector2(0, 1),
+                new Vector2(24, 20), new Vector2(564, -180));
+            AddSliced(studio, _vaTeachCard, Color.white);
+            hud.teachingStudioCardRoot = studio;
+
+            var body = CreateUiRect("StudioBody", studio.transform, Vector2.zero, Vector2.one, new Vector2(22, 20), new Vector2(-22, -20));
+
+            // 1. Header: Stage Pill + Progress Text + Thin Progress Bar + Big 25px Bold Station Title
+            var stagePill = CreateUiRect("StagePill", body.transform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -30), new Vector2(228, 0));
+            AddSliced(stagePill, _vaPillActiveSky, Color.white);
+            hud.teachStageBadgeText = CreateTmp("StageTxt", stagePill.transform, "第 1/9 步  ·  清花开松阶段", 14.5f, true, ColWhite,
+                TextAlignmentOptions.Center, Vector2.zero, Vector2.one, new Vector2(8, 0), new Vector2(-8, 0));
+
+            hud.teachingProgressText = CreateTmp("ProgTxt", body.transform, "已学 1/9  ·  通过 0/9", 14.5f, true, ColSkySoft,
+                TextAlignmentOptions.MidlineRight, new Vector2(0.48f, 1), new Vector2(1, 1), new Vector2(0, -30), Vector2.zero);
+
+            var pt = CreateUiRect("ProgTrack", body.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -42), new Vector2(0, -36));
+            AddSliced(pt, _vaBarPill, ColTrack);
+            hud.teachingProgressBar = CreateBarFill(pt.transform, ColSky, 0.11f);
+
+            hud.teachStationTitleText = CreateTmp("StationTitle", body.transform, "往复抓棉机（开松混棉）", 24f, true, ColWhite,
+                TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -90), new Vector2(0, -44));
+            hud.teachStationTitleText.overflowMode = TextOverflowModes.Overflow;
+
+            // 2. VISUAL MATERIAL TRANSFORMATION DIAGRAM (输入原料 -> 核心工艺 -> 输出成品)
+            var diag = CreateUiRect("MaterialTransformDiagram", body.transform, new Vector2(0, 1), new Vector2(1, 1),
+                new Vector2(0, -222), new Vector2(0, -94));
+            AddSliced(diag, _vaTeachDiagramBg, Color.white);
+
+            CreateTmp("DiagCaption", diag.transform, "物料形态演变图解（输入原料 → 核心工艺 → 输出成品）", 13.5f, true, ColSkySoft,
+                TextAlignmentOptions.Center, new Vector2(0, 1), new Vector2(1, 1), new Vector2(8, -26), new Vector2(-8, -4));
+
+            // Left: Input Cotton Stage
+            var inIconGo = CreateUiRect("InputIcon", diag.transform, new Vector2(0.17f, 1), new Vector2(0.17f, 1),
+                new Vector2(-31, -90), new Vector2(31, -28));
+            hud.teachInputIcon = inIconGo.AddComponent<UIImage>();
+            hud.teachInputIcon.preserveAspect = true;
+            hud.teachInputNameText = CreateTmp("InputName", diag.transform, "紧压原棉包", 15.5f, true, ColWhite,
+                TextAlignmentOptions.Center, new Vector2(0, 0), new Vector2(0.35f, 0), new Vector2(6, 6), new Vector2(-4, 34));
+
+            // Center: Glowing Flow Arrow + Core Action
+            var midArrGo = CreateUiRect("DiagArrow", diag.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
+                new Vector2(-24, -74), new Vector2(24, -42));
+            var midArrImg = midArrGo.AddComponent<UIImage>();
+            midArrImg.sprite = _spTeachArrow;
+            midArrImg.preserveAspect = true;
+            hud.teachActionLabelText = CreateTmp("ActionLbl", diag.transform, "往复抓棉 · 精细开松", 14.5f, true, ColSkySoft,
+                TextAlignmentOptions.Center, new Vector2(0.32f, 0), new Vector2(0.68f, 0), new Vector2(4, 6), new Vector2(-4, 46));
+
+            // Right: Output Cotton Stage
+            var outIconGo = CreateUiRect("OutputIcon", diag.transform, new Vector2(0.83f, 1), new Vector2(0.83f, 1),
+                new Vector2(-31, -90), new Vector2(31, -28));
+            hud.teachOutputIcon = outIconGo.AddComponent<UIImage>();
+            hud.teachOutputIcon.preserveAspect = true;
+            hud.teachOutputNameText = CreateTmp("OutputName", diag.transform, "松散均匀棉束", 15.5f, true, ColMint,
+                TextAlignmentOptions.Center, new Vector2(0.65f, 0), new Vector2(1, 0), new Vector2(4, 6), new Vector2(-6, 34));
+
+            // 3. THREE CLEAN VISIONOS SEGMENTED TABS
+            var tabBar = CreateUiRect("TeachTabBar", body.transform, new Vector2(0, 1), new Vector2(1, 1),
+                new Vector2(0, -274), new Vector2(0, -232));
+            hud.btnTeachTabPrinciple = CreateStyleAButton("TabPrinciple", tabBar.transform, "工艺原理与要点", 15.5f, true, _vaPillActiveWhite, ColDarkText,
+                new Vector2(0f, 0), new Vector2(0.333f, 1), new Vector2(0, 0), new Vector2(-4, 0));
+            hud.btnTeachTabEquipment = CreateStyleAButton("TabEquipment", tabBar.transform, "设备实景与参数", 15.5f, true, _vaPillIdle, ColSubText,
+                new Vector2(0.333f, 0), new Vector2(0.666f, 1), new Vector2(4, 0), new Vector2(-4, 0));
+            hud.btnTeachTabQuiz = CreateStyleAButton("TabQuiz", tabBar.transform, "随堂自测考核", 15.5f, true, _vaPillIdle, ColSubText,
+                new Vector2(0.666f, 0), new Vector2(1f, 1), new Vector2(4, 0), new Vector2(0, 0));
+
+            // 4. TAB CONTENT CONTAINER (stretches smoothly between tabs and bottom navigation!)
+            var tabContent = CreateUiRect("TabContentArea", body.transform, Vector2.zero, Vector2.one,
+                new Vector2(0, 58), new Vector2(0, -284));
+
+            // --- TAB 1: 工艺原理与要点 ---
+            var t1 = CreateUiRect("Tab1_Principle", tabContent.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            hud.teachTabPrincipleRoot = t1;
+
+            var goalCard = CreateUiRect("GoalCard", t1.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -64), new Vector2(0, 0));
+            AddSliced(goalCard, _vaSubcard, Color.white);
+            hud.teachingGoalText = CreateTmp("GoalTxt", goalCard.transform, "", 15f, false, ColWhite, TextAlignmentOptions.MidlineLeft,
+                Vector2.zero, Vector2.one, new Vector2(14, 4), new Vector2(-14, -4));
+            hud.teachingGoalText.lineSpacing = 4f;
+
+            hud.teachPrincipleBodyText = CreateTmp("PrincipleBody", t1.transform, "", 15.5f, false, ColWhite, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(4, -166), new Vector2(-4, -70));
+            hud.teachPrincipleBodyText.lineSpacing = 5f;
+
+            // 3 Visual Numbered Key-Point Cards (1 / 2 / 3)
+            for (int k = 0; k < 3; k++)
+            {
+                float kyTop = -172f - k * 56f;
+                var kpCard = CreateUiRect($"KeyPointCard_{k + 1}", t1.transform, new Vector2(0, 1), new Vector2(1, 1),
+                    new Vector2(0, kyTop - 50f), new Vector2(0, kyTop));
+                AddSliced(kpCard, _vaSubcard, Color.white);
+
+                var badgeGo = CreateUiRect("NumBadge", kpCard.transform, new Vector2(0, 0.5f), new Vector2(0, 0.5f),
+                    new Vector2(12, -15), new Vector2(42, 15));
+                var bImg = badgeGo.AddComponent<UIImage>();
+                bImg.sprite = _vaNumBadge;
+                bImg.preserveAspect = true;
+                CreateTmp("Num", badgeGo.transform, (k + 1).ToString(), 15f, true, ColWhite, TextAlignmentOptions.Center,
+                    Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+                var kpTxt = CreateTmp("Text", kpCard.transform, "", 14.5f, false, ColSubText, TextAlignmentOptions.MidlineLeft,
+                    Vector2.zero, Vector2.one, new Vector2(54, 3), new Vector2(-12, -3));
+                kpTxt.lineSpacing = 2.5f;
+                hud.teachKeyPointTexts[k] = kpTxt;
+            }
+
+            // --- TAB 2: 设备实景与参数 ---
+            var t2 = CreateUiRect("Tab2_Equipment", tabContent.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            hud.teachTabEquipmentRoot = t2;
+
+            var eqFrame = CreateUiRect("EquipPhotoFrame", t2.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -162), new Vector2(0, 0));
+            AddSliced(eqFrame, _vaSubcard, Color.white);
+            var eqPhotoGo = CreateUiRect("EquipPhoto", eqFrame.transform, Vector2.zero, Vector2.one, new Vector2(8, 8), new Vector2(-8, -8));
+            hud.teachEquipmentPhoto = eqPhotoGo.AddComponent<UIImage>();
+            hud.teachEquipmentPhoto.preserveAspect = true;
+
+            var specCard = CreateUiRect("EquipSpecsCard", t2.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 56), new Vector2(0, -172));
+            AddSliced(specCard, _vaSubcard, Color.white);
+            CreateTmp("SpecsHdr", specCard.transform, "核心设备技术规格参数", 14.5f, true, ColSkySoft, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(18, -34), new Vector2(-18, -8));
+            hud.teachEquipmentSpecsText = CreateTmp("EquipSpecsTxt", specCard.transform, "", 16f, false, ColWhite, TextAlignmentOptions.TopLeft,
+                Vector2.zero, Vector2.one, new Vector2(18, 10), new Vector2(-18, -40));
+            hud.teachEquipmentSpecsText.lineSpacing = 8f;
+
+            hud.btnTeachToggleRun = CreateStyleAButton("BtnTeachToggleRun", t2.transform, "● 设备运行中（点击演示远程停机）", 15f, true,
+                _vaPillGreen, new Color(0.46f, 0.96f, 0.76f), new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 2), new Vector2(0, 46));
+            hud.btnTeachToggleRunLabel = hud.btnTeachToggleRun.GetComponentInChildren<TextMeshProUGUI>();
+            t2.SetActive(false);
+
+            // --- TAB 3: 随堂自测考核 ---
+            var t3 = CreateUiRect("Tab3_Quiz", tabContent.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            hud.teachTabQuizRoot = t3;
+
+            hud.quizQuestionText = CreateTmp("QuizQ", t3.transform, "考核题目...", 17.5f, true, ColWhite, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(4, -64), new Vector2(-4, -2));
+            hud.quizQuestionText.lineSpacing = 5f;
+
+            for (int q = 0; q < 3; q++)
+            {
+                float yTop = -70f - q * 60f;
+                var qBtn = CreateStyleAButton($"QuizOpt_{q}", t3.transform, $"选项 {q + 1}", 15f, true, _vaPillIdle, ColWhite,
+                    new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, yTop - 52f), new Vector2(0, yTop));
+                var qTxt = qBtn.GetComponentInChildren<TextMeshProUGUI>();
+                qTxt.alignment = TextAlignmentOptions.MidlineLeft;
+                qTxt.margin = new Vector4(16, 4, 14, 4);
+                qTxt.overflowMode = TextOverflowModes.Overflow;
+                hud.quizOptionButtons[q] = qBtn;
+                hud.quizOptionTexts[q] = qTxt;
+            }
+
+            var fbCard = CreateUiRect("QuizFeedbackCard", t3.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -254));
+            AddSliced(fbCard, _vaSubcard, Color.white);
+            hud.quizFeedbackText = CreateTmp("QuizFb", fbCard.transform, "", 15f, false, ColSubText, TextAlignmentOptions.MidlineLeft,
+                Vector2.zero, Vector2.one, new Vector2(16, 8), new Vector2(-16, -8));
+            hud.quizFeedbackText.lineSpacing = 5f;
+            t3.SetActive(false);
+
+            // 5. BOTTOM TEACHING NAVIGATION BAR (< 上一工序 | 自动导览 | 下一工序 >)
+            var navBar = CreateUiRect("TeachBottomNav", body.transform, new Vector2(0, 0), new Vector2(1, 0),
+                new Vector2(0, 0), new Vector2(0, 48));
+            hud.btnPrevStation = CreateStyleAButton("BtnPrevSt", navBar.transform, "< 上一工序", 15.5f, true, _vaPillIdle, ColWhite,
+                new Vector2(0f, 0), new Vector2(0.31f, 1), new Vector2(0, 0), new Vector2(-4, 0));
+            hud.btnTeachAutoTour = CreateStyleAButton("BtnTeachTour", navBar.transform, "自动导览", 15f, true, _vaPillIdle, ColSkySoft,
+                new Vector2(0.31f, 0), new Vector2(0.62f, 1), new Vector2(4, 0), new Vector2(-4, 0));
+            hud.btnTeachAutoTourLabel = hud.btnTeachAutoTour.GetComponentInChildren<TextMeshProUGUI>();
+            hud.btnNextStation = CreateStyleAButton("BtnNextSt", navBar.transform, "下一工序 >", 16f, true, _vaPillActiveWhite, ColDarkText,
+                new Vector2(0.62f, 0), new Vector2(1f, 1), new Vector2(4, 0), new Vector2(0, 0));
+
+            // ----- 5C. BOTTOM-RIGHT SLEEK 3D VIEWPORT HINT PILL (OPEN 71% 3D STAGE!) -----
+            var teachHint = CreateUiRect("Teaching3DHintPill", mainParent, new Vector2(1, 0), new Vector2(1, 0),
+                new Vector2(-590, 20), new Vector2(-24, 62));
+            var thImg = AddSliced(teachHint, _vaPillGlass, Color.white);
+            thImg.raycastTarget = false;
+            var thTxt = CreateTmp("HintTxt", teachHint.transform, "右键拖拽 360° 观察设备 · 滚轮放大细节 · 点击顶部流程图随时切换工段", 14.5f, true, ColWhite,
+                TextAlignmentOptions.Center, Vector2.zero, Vector2.one, new Vector2(18, 0), new Vector2(-18, 0));
+            thTxt.raycastTarget = false;
+            hud.teachingHintPill = teachHint;
+
+            // Start hidden until Teaching Mode is entered
+            ribbon.SetActive(false);
+            studio.SetActive(false);
+            teachHint.SetActive(false);
         }
 
         // ==================== STYLE A UI COMPONENT FACTORIES ====================
@@ -1071,7 +1300,7 @@ namespace CNC.EditorTools
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.65f;
+            scaler.matchWidthOrHeight = 0.55f;
             go.AddComponent<GraphicRaycaster>();
             return go;
         }
@@ -1139,8 +1368,8 @@ namespace CNC.EditorTools
 
         private static Button CreateSegBtn(string name, Transform parent, string label, ref float xCursor, float w, Sprite sp, Color textCol)
         {
-            var btn = CreateStyleAButton(name, parent, label, 13.5f, true, sp, textCol,
-                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(xCursor, -18), new Vector2(xCursor + w, 18));
+            var btn = CreateStyleAButton(name, parent, label, 15f, true, sp, textCol,
+                new Vector2(0, 0.5f), new Vector2(0, 0.5f), new Vector2(xCursor, -19), new Vector2(xCursor + w, 19));
             xCursor += w + 4f;
             return btn;
         }
@@ -1148,37 +1377,37 @@ namespace CNC.EditorTools
         private static Button CreateCircleIconBtn(string name, Transform parent, string glyph, ref float xCursor)
         {
             var go = CreateUiRect(name, parent, new Vector2(0, 0.5f), new Vector2(0, 0.5f),
-                new Vector2(xCursor, -16), new Vector2(xCursor + 32, 16));
+                new Vector2(xCursor, -17), new Vector2(xCursor + 34, 17));
             var img = go.AddComponent<UIImage>();
             img.sprite = _vaCircleBtn;
             img.color = Color.white;
             var btn = go.AddComponent<Button>();
             btn.targetGraphic = img;
-            var tmp = CreateTmp("G", go.transform, glyph, 13, true, ColWhite, TextAlignmentOptions.Center, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var tmp = CreateTmp("G", go.transform, glyph, 14.5f, true, ColWhite, TextAlignmentOptions.Center, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             tmp.raycastTarget = false;
-            xCursor += 36f;
+            xCursor += 38f;
             return btn;
         }
 
         private static TextMeshProUGUI CreateKpiSubcard(Transform parent, string label, string val, Color valColor, float x, float yTop)
         {
             var box = CreateUiRect($"Kpi_{label}", parent, new Vector2(0, 1), new Vector2(0, 1),
-                new Vector2(x, yTop - 74), new Vector2(x + 124, yTop));
+                new Vector2(x, yTop - 80), new Vector2(x + 142, yTop));
             AddSliced(box, _vaSubcard, Color.white);
-            CreateTmp("L", box.transform, label, 11.5f, false, ColSubText, TextAlignmentOptions.MidlineLeft,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(12, -28), new Vector2(-8, -8));
-            return CreateTmp("V", box.transform, val, 21, true, valColor, TextAlignmentOptions.MidlineLeft,
+            CreateTmp("L", box.transform, label, 13.5f, false, ColSubText, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(12, -30), new Vector2(-8, -8));
+            return CreateTmp("V", box.transform, val, 23f, true, valColor, TextAlignmentOptions.MidlineLeft,
                 new Vector2(0, 0), new Vector2(1, 0.62f), new Vector2(12, 8), new Vector2(-8, 0));
         }
 
         private static void CreateStyleATelemetryRow(Transform parent, string label, float yTop, Color fillCol,
             out TextMeshProUGUI valText, out UIImage fillImg)
         {
-            CreateTmp("L", parent, label, 12, false, ColSubText, TextAlignmentOptions.MidlineLeft,
-                new Vector2(0, 1), new Vector2(0.55f, 1), new Vector2(0, yTop - 18), new Vector2(0, yTop));
-            valText = CreateTmp("V", parent, "0", 12.5f, true, ColWhite, TextAlignmentOptions.MidlineRight,
-                new Vector2(0.45f, 1), new Vector2(1, 1), new Vector2(0, yTop - 18), new Vector2(0, yTop));
-            var trk = CreateUiRect("Trk", parent, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, yTop - 31), new Vector2(0, yTop - 24));
+            CreateTmp("L", parent, label, 14.5f, false, ColSubText, TextAlignmentOptions.MidlineLeft,
+                new Vector2(0, 1), new Vector2(0.55f, 1), new Vector2(0, yTop - 22), new Vector2(0, yTop));
+            valText = CreateTmp("V", parent, "0", 15f, true, ColWhite, TextAlignmentOptions.MidlineRight,
+                new Vector2(0.45f, 1), new Vector2(1, 1), new Vector2(0, yTop - 22), new Vector2(0, yTop));
+            var trk = CreateUiRect("Trk", parent, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, yTop - 36), new Vector2(0, yTop - 28));
             AddSliced(trk, _vaBarPill, ColTrack);
             fillImg = CreateBarFill(trk.transform, fillCol, 0.72f);
         }
