@@ -23,6 +23,10 @@ namespace CNC.DigitalTwin
         public Button btnOpenSettings;
         public Button btnQuit;
 
+        [Header("Style A Quality Pill Sprites")]
+        public Sprite spPillActiveWhite;
+        public Sprite spPillIdle;
+
         [Header("Settings Modal")]
         public GameObject settingsModal;
         public Button btnQualityMed;
@@ -146,17 +150,26 @@ namespace CNC.DigitalTwin
         private void RefreshQualityButtonHighlights()
         {
             int cur = QualitySettings.GetQualityLevel();
-            SetBtnTint(btnQualityMed, cur <= 2);
-            SetBtnTint(btnQualityHigh, cur == 3 || cur == 4);
-            SetBtnTint(btnQualityUltra, cur >= 5);
+            SetBtnStyle(btnQualityMed, cur <= 2);
+            SetBtnStyle(btnQualityHigh, cur == 3 || cur == 4);
+            SetBtnStyle(btnQualityUltra, cur >= 5);
         }
 
-        private static void SetBtnTint(Button btn, bool active)
+        private void SetBtnStyle(Button btn, bool active)
         {
             if (btn == null) return;
             var img = btn.GetComponent<UIImage>();
+            var txt = btn.GetComponentInChildren<TextMeshProUGUI>();
             if (img != null)
-                img.color = active ? new Color(0.0f, 0.85f, 1f, 1f) : new Color(0.55f, 0.72f, 0.88f, 0.85f);
+            {
+                if (active && spPillActiveWhite != null) img.sprite = spPillActiveWhite;
+                else if (!active && spPillIdle != null) img.sprite = spPillIdle;
+                img.color = Color.white;
+            }
+            if (txt != null)
+            {
+                txt.color = active ? new Color(0.06f, 0.09f, 0.16f, 1f) : new Color(0.92f, 0.95f, 1.0f, 0.85f);
+            }
         }
 
         private void QuitApplication()

@@ -67,9 +67,16 @@ namespace CNC.DigitalTwin
 
         private float _tourTimer;
         private int _tourStationIndex;
+        private bool _isRightOrbitDragging;
+        private bool _isMiddlePanDragging;
 
-        private readonly Vector3 _fpsHall1Spawn = new Vector3(198f, 2.6f, 156f);
-        private readonly Vector3 _fpsHall2Spawn = new Vector3(39.5f, 8.5f, 368f);
+        [Header("First-Person Grounded Spawns & Eye Height")]
+        public Vector3 fpsCameraLocalOffset = new Vector3(0f, 4.8f, 0f);
+        public float hall1FloorY = 1.10f;
+        public float hall2FloorY = 3.80f;
+
+        private readonly Vector3 _fpsHall1Spawn = new Vector3(198f, 1.18f, 162f);
+        private readonly Vector3 _fpsHall2Spawn = new Vector3(39.5f, 3.88f, 358f);
         private CharacterMovement _fpsMovement;
         private Rigidbody _fpsRigidbody;
 
@@ -91,12 +98,19 @@ namespace CNC.DigitalTwin
                 if (fpsCameraAnchor == null && mainCamera != null && mainCamera.transform.IsChildOf(fpsPlayerRoot.transform))
                     fpsCameraAnchor = mainCamera.transform.parent;
 
+                // Preserve calibrated eye height from scene camera if parented inside ECM_FirstPerson
+                if (mainCamera != null && fpsCameraAnchor != null && mainCamera.transform.parent == fpsCameraAnchor)
+                {
+                    if (mainCamera.transform.localPosition.y >= 1.5f)
+                        fpsCameraLocalOffset = mainCamera.transform.localPosition;
+                }
+
                 // Crisp industrial hall walking speed (large 280m factory)
                 if (fpsController != null)
                 {
-                    fpsController.forwardSpeed = Mathf.Max(fpsController.forwardSpeed, 11f);
-                    fpsController.backwardSpeed = Mathf.Max(fpsController.backwardSpeed, 8f);
-                    fpsController.strafeSpeed = Mathf.Max(fpsController.strafeSpeed, 9f);
+                    fpsController.forwardSpeed = Mathf.Max(fpsController.forwardSpeed, 12f);
+                    fpsController.backwardSpeed = Mathf.Max(fpsController.backwardSpeed, 9f);
+                    fpsController.strafeSpeed = Mathf.Max(fpsController.strafeSpeed, 10f);
                     fpsController.runSpeedMultiplier = Mathf.Max(fpsController.runSpeedMultiplier, 2.4f);
                 }
             }
@@ -128,6 +142,16 @@ namespace CNC.DigitalTwin
             {
                 if (Input.GetKeyDown(KeyCode.R))
                     ResetFpsPosition();
+
+                // Rock-solid anti-void safety guard: never allow player or camera beneath the floor plane
+                if (fpsPlayerRoot != null)
+                {
+                    float floorY = CurrentHall == WorkshopHall.SpinningHall ? hall1FloorY : hall2FloorY;
+                    if (fpsPlayerRoot.transform.position.y < floorY - 0.55f)
+                    {
+                        TeleportFpsToHall(CurrentHall);
+                    }
+                }
                 return;
             }
 
@@ -163,12 +187,14 @@ namespace CNC.DigitalTwin
             {
                 // Restore roof when walking inside & unfreeze FPS player safely on floor
                 SetRoofCutaway(false);
-                if (fpsPlayerRoot != null && fpsPlayerRoot.transform.position.y < 0.5f)
+                float floorY = CurrentHall == WorkshopHall.SpinningHall ? hall1FloorY : hall2FloorY;
+                if (fpsPlayerRoot != null && fpsPlayerRoot.transform.position.y < floorY - 0.25f)
                     TeleportFpsToHall(CurrentHall);
                 if (_fpsRigidbody != null)
                 {
                     _fpsRigidbody.isKinematic = false;
                     _fpsRigidbody.velocity = Vector3.zero;
+                    _fpsRigidbody.angularVelocity = Vector3.zero;
                 }
                 if (_fpsMovement != null) _fpsMovement.enabled = true;
                 AttachCameraToFps();
@@ -378,19 +404,40 @@ namespace CNC.DigitalTwin
         {
             if (fpsPlayerRoot == null) return;
             Vector3 target = hall == WorkshopHall.SpinningHall ? _fpsHall1Spawn : _fpsHall2Spawn;
-            fpsPlayerRoot.transform.position = target;
-            fpsPlayerRoot.transform.rotation = hall == WorkshopHall.SpinningHall
-                ? Quaternion.Euler(0f, -90f, 0f)
+            Quaternion targetRot = hall == WorkshopHall.SpinningHall
+                ? Quaternion.Euler(0f, -122f, 0f)
                 : Quaternion.Euler(0f, 0f, 0f);
-            var rb = fpsPlayerRoot.GetComponent<Rigidbody>();
-            if (rb != null) rb.velocity = Vector3.zero;
+
+            fpsPlayerRoot.transform.position = target;
+            fpsPlayerRoot.transform.rotation = targetRot;
+            if (_fpsRigidbody == null) _fpsRigidbody = fpsPlayerRoot.GetComponent<Rigidbody>();
+            if (_fpsRigidbody != null)
+            {
+                _fpsRigidbody.position = target;
+                _fpsRigidbody.rotation = targetRot;
+                if (!_fpsRigidbody.isKinematic)
+                {
+                    _fpsRigidbody.velocity = Vector3.zero;
+                    _fpsRigidbody.angularVelocity = Vector3.zero;
+                }
+            }
+            Physics.SyncTransforms();
+
+            if (mainCamera != null && fpsCameraAnchor != null && mainCamera.transform.parent == fpsCameraAnchor)
+            {
+                mainCamera.transform.localPosition = fpsCameraLocalOffset;
+                mainCamera.transform.localRotation = Quaternion.identity;
+            }
+            if (fpsMouseLook != null && mainCamera != null)
+                fpsMouseLook.Init(fpsPlayerRoot.transform, mainCamera.transform);
         }
 
         private void AttachCameraToFps()
         {
             if (mainCamera == null || fpsCameraAnchor == null) return;
             mainCamera.transform.SetParent(fpsCameraAnchor, false);
-            mainCamera.transform.localPosition = Vector3.zero;
+            // CRITICAL: preserve factory-scaled eye height (~4.8m above feet) so camera never clips beneath floor!
+            mainCamera.transform.localPosition = fpsCameraLocalOffset;
             mainCamera.transform.localRotation = Quaternion.identity;
             if (fpsMouseLook != null && fpsPlayerRoot != null)
                 fpsMouseLook.Init(fpsPlayerRoot.transform, mainCamera.transform);
@@ -451,25 +498,30 @@ namespace CNC.DigitalTwin
             if (mainCamera == null) return;
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
 
+            if (Input.GetMouseButtonDown(1) && !overUI) _isRightOrbitDragging = true;
+            if (!Input.GetMouseButton(1)) _isRightOrbitDragging = false;
+            if (Input.GetMouseButtonDown(2) && !overUI) _isMiddlePanDragging = true;
+            if (!Input.GetMouseButton(2)) _isMiddlePanDragging = false;
+
+            // Right-mouse drag to orbit (continues smoothly even if cursor passes over a UI pill)
+            if (_isRightOrbitDragging)
+            {
+                _targetYaw += Input.GetAxis("Mouse X") * orbitSensitivity * 1.4f;
+                _targetPitch -= Input.GetAxis("Mouse Y") * orbitSensitivity * 1.2f;
+                _targetPitch = Mathf.Clamp(_targetPitch, 8f, 82f);
+            }
+
+            // Middle-mouse drag to pan
+            if (_isMiddlePanDragging)
+            {
+                float scale = _targetDistance * panSpeed * 0.025f;
+                Vector3 right = mainCamera.transform.right;
+                Vector3 forward = Vector3.ProjectOnPlane(mainCamera.transform.forward, Vector3.up).normalized;
+                _targetPivot -= (right * Input.GetAxis("Mouse X") + forward * Input.GetAxis("Mouse Y")) * scale * 12f;
+            }
+
             if (!overUI)
             {
-                // Right-mouse drag to orbit
-                if (Input.GetMouseButton(1))
-                {
-                    _targetYaw += Input.GetAxis("Mouse X") * orbitSensitivity * 1.4f;
-                    _targetPitch -= Input.GetAxis("Mouse Y") * orbitSensitivity * 1.2f;
-                    _targetPitch = Mathf.Clamp(_targetPitch, 8f, 82f);
-                }
-
-                // Middle-mouse drag to pan
-                if (Input.GetMouseButton(2))
-                {
-                    float scale = _targetDistance * panSpeed * 0.025f;
-                    Vector3 right = mainCamera.transform.right;
-                    Vector3 forward = Vector3.ProjectOnPlane(mainCamera.transform.forward, Vector3.up).normalized;
-                    _targetPivot -= (right * Input.GetAxis("Mouse X") + forward * Input.GetAxis("Mouse Y")) * scale * 12f;
-                }
-
                 // Scroll wheel zoom
                 float scroll = Input.GetAxis("Mouse ScrollWheel");
                 if (Mathf.Abs(scroll) > 0.001f)
@@ -491,7 +543,8 @@ namespace CNC.DigitalTwin
                     float shiftMult = Input.GetKey(KeyCode.LeftShift) ? 2.2f : 1.0f;
                     float moveSpd = Mathf.Clamp(_targetDistance * 0.45f, 16f, 88f) * shiftMult;
                     _targetPivot += (right * h + forward * v + Vector3.up * (upDown * 0.6f)) * (moveSpd * Time.unscaledDeltaTime);
-                    _targetPivot.y = Mathf.Clamp(_targetPivot.y, 1.5f, 55f);
+                    float minPivotY = (CurrentHall == WorkshopHall.SpinningHall ? hall1FloorY : hall2FloorY) + 1.0f;
+                    _targetPivot.y = Mathf.Clamp(_targetPivot.y, minPivotY, 55f);
                 }
             }
 
@@ -507,7 +560,8 @@ namespace CNC.DigitalTwin
         {
             if (mainCamera == null) return;
             Vector3 pos = ComputeOrbitPosition(_currentPivot, _currentYaw, _currentPitch, _currentDistance);
-            if (pos.y < 2.5f) pos.y = 2.5f; // Never clip beneath the factory floor
+            float minCamY = (CurrentHall == WorkshopHall.SpinningHall ? hall1FloorY : hall2FloorY) + 1.8f;
+            if (pos.y < minCamY) pos.y = minCamY; // Never clip beneath either workshop floor
             mainCamera.transform.position = pos;
             mainCamera.transform.LookAt(_currentPivot, Vector3.up);
         }

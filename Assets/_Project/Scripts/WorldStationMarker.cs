@@ -20,7 +20,7 @@ namespace CNC.DigitalTwin
 
         private void Start()
         {
-            _cam = Camera.main;
+            _cam = Camera.main ?? (CameraRigManager.Instance != null ? CameraRigManager.Instance.mainCamera : null);
             _baseScale = transform.localScale;
         }
 
@@ -34,7 +34,7 @@ namespace CNC.DigitalTwin
                 if (!visible) return;
             }
 
-            if (_cam == null) _cam = Camera.main;
+            if (_cam == null) _cam = Camera.main ?? (CameraRigManager.Instance != null ? CameraRigManager.Instance.mainCamera : null);
             if (_cam == null) return;
 
             // Billboard facing camera
@@ -42,14 +42,15 @@ namespace CNC.DigitalTwin
 
             // Distance-compensated readable scale
             float dist = Vector3.Distance(_cam.transform.position, transform.position);
-            float factor = Mathf.Clamp(dist / 55f, 0.55f, 2.6f);
+            float factor = Mathf.Clamp(dist / 62f, 0.48f, 1.85f);
             transform.localScale = _baseScale * factor;
 
-            // Fade smoothly if extremely far (> 280m) or behind camera
+            // Fade smoothly if very close (< 10m overhead) or extremely far (> 220m)
             if (canvasGroup != null)
             {
-                float alpha = Mathf.Clamp01(1f - (dist - 220f) / 100f);
-                canvasGroup.alpha = alpha;
+                float farAlpha = Mathf.Clamp01(1f - (dist - 210f) / 100f);
+                float nearAlpha = Mathf.Clamp01((dist - 7f) / 7f);
+                canvasGroup.alpha = farAlpha * nearAlpha;
             }
 
             if (statusDot != null && sim != null && stationIndex >= 0 && stationIndex < sim.stationRunning.Length)

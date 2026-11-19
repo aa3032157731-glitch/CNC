@@ -102,9 +102,9 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u5927\u6742\u8D28\u4E00\u65E6\u88AB\u9AD8\u901F\u6253\u624B\u51FB\u788E\uFF0C\u6781\u6613\u7C98\u9644\u4E8E\u7EA4\u7EF4\u5F62\u6210\u75B5\u70B9\uFF0C\u540E\u7EED\u68B3\u68C9\u4E0E\u7CBE\u68B3\u6781\u96BE\u5F7B\u5E95\u6E05\u9664\u3002"
     previewSprite: {fileID: 21300000, guid: 371e2b691af8b52429ac108b1f7bed87, type: 3}
     previewSpritePath: Assets/Fanyi/R-C (3).jpg
-    worldPosition: {x: 143.5, y: 6.7, z: 23.8}
-    focusCameraPos: {x: 165, y: 15, z: 52}
-    focusLookAtPos: {x: 132, y: 6, z: 24}
+    worldPosition: {x: 137.5, y: 7.2, z: 30.5}
+    focusCameraPos: {x: 165, y: 15, z: 54}
+    focusLookAtPos: {x: 132, y: 6.2, z: 25}
     sceneTargetNames:
     - "\u9664\u6742\u673A (1)"
     - "\u9664\u6742\u673A (2)"
@@ -449,8 +449,8 @@ MonoBehaviour:
     previewSprite: {fileID: 21300000, guid: cbe674229a3ca5641a145d265b6b4ede, type: 3}
     previewSpritePath: "Assets/Scenes/Play/\u6444\u56FE\u7F51_600865141_\u5DE5\u4E1A\u68C9\u7EB1\u7EBA\u7EC7\u5DE5\u5382(\u4EC5\u4EA4\u6D41\u5B66\u4E60\u4F7F\u7528).jpg"
     worldPosition: {x: 39.5, y: 9, z: 408}
-    focusCameraPos: {x: 39.5, y: 15.5, z: 358}
-    focusLookAtPos: {x: 39.5, y: 9, z: 422}
+    focusCameraPos: {x: 39.5, y: 14.2, z: 376}
+    focusLookAtPos: {x: 39.5, y: 8.8, z: 424}
     sceneTargetNames:
     - "\u68C0\u6D4B\u4EA7\u7EBF"
     - "\u68C0\u6D4B\u4EA7\u7EBF (1)"

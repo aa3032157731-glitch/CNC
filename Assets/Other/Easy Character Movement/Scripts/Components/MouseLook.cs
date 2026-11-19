@@ -58,6 +58,7 @@ namespace ECM.Components
         #region FIELDS
 
         protected bool _isCursorLocked = true;
+        protected bool _isRightDragging = false;
 
         protected Quaternion characterTargetRotation;
         protected Quaternion cameraTargetRotation;
@@ -181,7 +182,16 @@ namespace ECM.Components
             // Support BOTH classic locked-cursor FPS look (toggle via Tab) AND intuitive Right-Mouse-Drag look
             // while cursor remains free for clicking VisionOS UI controls!
             bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-            bool rightDragLook = !_isCursorLocked && Input.GetMouseButton(1) && !overUI;
+            if (!_isCursorLocked)
+            {
+                if (Input.GetMouseButtonDown(1) && !overUI) _isRightDragging = true;
+                if (!Input.GetMouseButton(1)) _isRightDragging = false;
+            }
+            else
+            {
+                _isRightDragging = false;
+            }
+            bool rightDragLook = !_isCursorLocked && _isRightDragging;
             if (!_lockCursor && !rightDragLook)
                 return;
             if (!_isCursorLocked && !rightDragLook)

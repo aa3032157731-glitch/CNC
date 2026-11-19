@@ -60,17 +60,39 @@ namespace CNC.DigitalTwin
 
             bool cursorLocked = Cursor.lockState == CursorLockMode.Locked;
             bool overUI = !cursorLocked && EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool draggingCamera = Input.GetMouseButton(1) || Input.GetMouseButton(2);
+            bool pointerInsideScreen = cursorLocked ||
+                (Input.mousePosition.x >= 0f && Input.mousePosition.x <= Screen.width &&
+                 Input.mousePosition.y >= 0f && Input.mousePosition.y <= Screen.height);
 
             MachineInteractable hitMachine = null;
-            if (!overUI)
+            if (!overUI && !draggingCamera && pointerInsideScreen)
             {
                 Ray ray = cursorLocked
                     ? targetCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f))
                     : targetCamera.ScreenPointToRay(Input.mousePosition);
 
-                if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, ~0, QueryTriggerInteraction.Collide))
+                var hits = Physics.RaycastAll(ray, maxRayDistance, ~0, QueryTriggerInteraction.Collide);
+                if (hits != null && hits.Length > 0)
                 {
-                    hitMachine = hit.collider.GetComponentInParent<MachineInteractable>();
+                    Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+                    for (int i = 0; i < hits.Length; i++)
+                    {
+                        var col = hits[i].collider;
+                        if (col == null) continue;
+                        var inter = col.GetComponentInParent<MachineInteractable>();
+                        if (inter != null)
+                        {
+                            // Skip triggers the camera is currently standing inside or right against (< 2m)
+                            if (hits[i].distance < 2.0f || col.bounds.Contains(ray.origin))
+                                continue;
+                            hitMachine = inter;
+                            break;
+                        }
+                        // Stop at opaque solid walls/machines that block line of sight
+                        if (!col.isTrigger && hits[i].distance >= 1.0f)
+                            break;
+                    }
                 }
             }
 

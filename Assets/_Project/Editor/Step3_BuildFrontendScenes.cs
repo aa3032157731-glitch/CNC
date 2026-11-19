@@ -168,6 +168,7 @@ namespace CNC.EditorTools
             var cam = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
             if (cam != null)
             {
+                cam.tag = "MainCamera";
                 cam.clearFlags = CameraClearFlags.SolidColor;
                 cam.backgroundColor = new Color(0.05f, 0.08f, 0.13f, 1f);
                 var uac = cam.GetComponent<UniversalAdditionalCameraData>() ?? cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
@@ -264,6 +265,8 @@ namespace CNC.EditorTools
                 new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 22), new Vector2(0, 48));
 
             // Settings Modal
+            ctrl.spPillActiveWhite = _vaPillActiveWhite;
+            ctrl.spPillIdle = _vaPillIdle;
             ctrl.settingsModal = BuildStyleASettingsModal(canvasGo.transform, out ctrl.btnQualityMed, out ctrl.btnQualityHigh,
                 out ctrl.btnQualityUltra, out ctrl.sensitivitySlider, out ctrl.sensitivityValueText, out ctrl.btnCloseSettings);
 
@@ -303,12 +306,23 @@ namespace CNC.EditorTools
             // FIX 2: Fix floor holographic ring material (clean URP Unlit Transparent ring, zero square glare!)
             FixFloorHoloRingMaterial();
 
-            // FIX 3: Place ECM_FirstPerson at open sunlit main factory entrance aisle so user walks freely immediately!
+            // FIX 3: Solidify zero-thickness floors (7.8e-7m -> 2.0m slabs), add safety sub-floors,
+            // fix ALL negative-scale / negative-size BoxColliders (0 console warnings!), & hide stray below-floor cylinder!
+            FixFloorsNegativeCollidersAndStrayObjects();
+
+            // FIX 4: Place ECM_FirstPerson cleanly grounded on Workshop 1 floor (Y=1.18m) with preserved 4.8m eye height!
             var fpsRoot = GameObject.Find("ECM_FirstPerson");
             if (fpsRoot != null)
             {
-                fpsRoot.transform.position = new Vector3(198f, 2.5f, 156f);
-                fpsRoot.transform.rotation = Quaternion.Euler(0f, -110f, 0f);
+                fpsRoot.transform.position = new Vector3(198f, 1.18f, 162f);
+                fpsRoot.transform.rotation = Quaternion.Euler(0f, -122f, 0f);
+                var pivot = fpsRoot.transform.Find("Camera_Pivot");
+                if (pivot != null)
+                {
+                    pivot.localPosition = Vector3.zero;
+                    pivot.localRotation = Quaternion.identity;
+                    pivot.localScale = Vector3.one;
+                }
             }
 
             // Disable old legacy canvases
@@ -338,16 +352,23 @@ namespace CNC.EditorTools
 
             var camRig = sysRoot.AddComponent<CameraRigManager>();
             var mainCam = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
+            if (mainCam != null) mainCam.tag = "MainCamera";
             camRig.mainCamera = mainCam;
             camRig.fpsPlayerRoot = fpsRoot;
+            camRig.fpsCameraLocalOffset = new Vector3(0f, 4.80f, 0f);
+            camRig.hall1FloorY = 1.10f;
+            camRig.hall2FloorY = 3.80f;
             if (fpsRoot != null)
             {
                 camRig.fpsController = fpsRoot.GetComponent<BaseFirstPersonController>();
                 camRig.fpsMouseLook = fpsRoot.GetComponent<MouseLook>();
-                if (mainCam != null && mainCam.transform.IsChildOf(fpsRoot.transform))
-                    camRig.fpsCameraAnchor = mainCam.transform.parent;
-                else
-                    camRig.fpsCameraAnchor = fpsRoot.transform.Find("Camera_Pivot");
+                camRig.fpsCameraAnchor = fpsRoot.transform.Find("Camera_Pivot") ?? (mainCam != null ? mainCam.transform.parent : null);
+                if (mainCam != null && camRig.fpsCameraAnchor != null)
+                {
+                    mainCam.transform.SetParent(camRig.fpsCameraAnchor, false);
+                    mainCam.transform.localPosition = camRig.fpsCameraLocalOffset;
+                    mainCam.transform.localRotation = Quaternion.identity;
+                }
             }
             CollectRoofCutawayObjects(camRig);
 
@@ -431,7 +452,116 @@ namespace CNC.EditorTools
                 mat.SetColor("_BaseColor", new Color(0.45f, 0.85f, 1.0f, 0.72f));
                 mat.enableInstancing = true;
                 EditorUtility.SetDirty(mat);
+
+                // Ensure ALL 7 floor UI trigger pads (including 除杂、梳棉、卷棉UI & 抓棉机UI) use the transparent holo ring!
+                foreach (var pname in new[] { "抓棉机UI", "除杂、梳棉、卷棉UI", "末并", "精梳", "粗纱", "细纱", "络筒" })
+                {
+                    var go = GameObject.Find(pname);
+                    if (go == null) continue;
+                    foreach (var mr in go.GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        mr.sharedMaterial = mat;
+                        mr.shadowCastingMode = ShadowCastingMode.Off;
+                        mr.receiveShadows = false;
+                    }
+                }
             }
+
+            // Fix Workshop 2 hanging LED signboards so "智能视觉分拣区" renders on one crisp balanced line (no orphan wrap!)
+            foreach (var tmp in UnityEngine.Object.FindObjectsOfType<TextMeshPro>(true))
+            {
+                if (tmp.text != null && tmp.text.Contains("智能视觉检测分拣区"))
+                {
+                    tmp.text = "智能视觉分拣区";
+                    tmp.enableWordWrapping = false;
+                    EditorUtility.SetDirty(tmp);
+                }
+            }
+        }
+
+        private static void FixFloorsNegativeCollidersAndStrayObjects()
+        {
+            // 1. Thicken both Bldg_Floor_001 BoxColliders from 0.00000078m to solid 2.0m downward slabs (flush at top visual floor!)
+            int thickenedFloors = 0;
+            foreach (var bname in new[] { "Building", "Building (1)" })
+            {
+                var b = GameObject.Find(bname);
+                if (b == null) continue;
+                var floorTr = b.transform.Find("Bldg_Floor_001");
+                if (floorTr == null) continue;
+                var bc = floorTr.GetComponent<BoxCollider>();
+                if (bc == null) bc = floorTr.gameObject.AddComponent<BoxCollider>();
+                float sy = Mathf.Max(0.01f, Mathf.Abs(floorTr.lossyScale.y));
+                float localThick = 2.0f / sy; // Exact 2.0m solid slab in world space
+                var sz = bc.size;
+                sz.x = Mathf.Abs(sz.x);
+                sz.y = localThick;
+                sz.z = Mathf.Abs(sz.z);
+                bc.size = sz;
+                var c = bc.center;
+                c.y = -localThick * 0.5f; // Top surface sits mathematically flush at local Y = 0 (world 1.10 / 3.80)
+                bc.center = c;
+                bc.isTrigger = false;
+                bc.enabled = true;
+                thickenedFloors++;
+            }
+
+            // 2. Build continuous rock-solid safety sub-floors for Workshop 1 & Workshop 2 (impossible to fall into skybox!)
+            var oldSafety = GameObject.Find("__SafetyColliders");
+            if (oldSafety != null) UnityEngine.Object.DestroyImmediate(oldSafety);
+            var safetyRoot = new GameObject("__SafetyColliders");
+
+            void AddSafetySlab(string slabName, Vector3 center, Vector3 size)
+            {
+                var slab = new GameObject(slabName);
+                slab.layer = 0; // Default layer (matches GroundDetection _groundMask = 1)
+                slab.transform.SetParent(safetyRoot.transform, false);
+                slab.transform.position = center;
+                var box = slab.AddComponent<BoxCollider>();
+                box.size = size;
+                box.isTrigger = false;
+            }
+
+            // Workshop 1 visual floor: X=[-67.14, 215.26], Y=1.10, Z=[-40.88, 315.75] -> top at Y=1.08
+            AddSafetySlab("SafetyFloor_Workshop1", new Vector3(74.0f, -0.92f, 137.4f), new Vector3(340f, 4.0f, 420f));
+            // Workshop 2 visual floor: X=[0.60, 76.87], Y=3.80, Z=[345.94, 450.38] -> top at Y=3.78
+            AddSafetySlab("SafetyFloor_Workshop2", new Vector3(38.7f, 1.78f, 398.2f), new Vector3(120f, 4.0f, 150f));
+
+            // Preserve truck solid collision on a positive-scale proxy before removing negative-scale BoxColliders
+            var truck = GameObject.Find("货车");
+            if (truck != null)
+            {
+                var tmr = truck.GetComponent<MeshRenderer>();
+                if (tmr != null)
+                    AddSafetySlab("SafetyProxy_Truck", tmr.bounds.center, tmr.bounds.size);
+            }
+
+            // 3. Fix ALL negative-size & negative-scale BoxColliders across entire scene (ZERO PhysX warnings!)
+            int fixedNegSize = 0;
+            int removedNegScale = 0;
+            foreach (var bc in UnityEngine.Object.FindObjectsOfType<BoxCollider>(true))
+            {
+                if (bc == null) continue;
+                Vector3 ls = bc.transform.lossyScale;
+                if (ls.x < 0f || ls.y < 0f || ls.z < 0f)
+                {
+                    UnityEngine.Object.DestroyImmediate(bc);
+                    removedNegScale++;
+                    continue;
+                }
+                Vector3 sz = bc.size;
+                if (sz.x < 0f || sz.y < 0f || sz.z < 0f)
+                {
+                    bc.size = new Vector3(Mathf.Abs(sz.x), Mathf.Abs(sz.y), Mathf.Abs(sz.z));
+                    fixedNegSize++;
+                }
+            }
+
+            // 4. Hide stray below-floor cotton roll 'chun' (pos Y = -10.15)
+            var chun = GameObject.Find("chun");
+            if (chun != null) chun.SetActive(false);
+
+            Debug.Log($"[CNC StyleA] Physics & Floor hardening: thickenedFloors={thickenedFloors}, fixedNegSize={fixedNegSize}, removedNegScale={removedNegScale}, hid stray below-floor 'chun'.");
         }
 
         private static void RebuildStationBeacons(WorkshopCatalog catalog)
@@ -444,7 +574,11 @@ namespace CNC.EditorTools
             {
                 var beaconGo = new GameObject($"Beacon_{st.code}_{st.shortName}");
                 beaconGo.transform.SetParent(root.transform, false);
-                beaconGo.transform.position = new Vector3(st.worldPosition.x, st.worldPosition.y + 4.4f, st.worldPosition.z);
+                // Place ST-09 beacon cleanly beside the left inspection line instead of behind center LED sign
+                Vector3 bPos = st.index == 8
+                    ? new Vector3(26.5f, 8.2f, 404.0f)
+                    : new Vector3(st.worldPosition.x, st.worldPosition.y + 4.4f, st.worldPosition.z);
+                beaconGo.transform.position = bPos;
 
                 var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 pole.name = "Pole";
@@ -530,7 +664,10 @@ namespace CNC.EditorTools
             foreach (var pname in new[] { "末并", "精梳", "粗纱", "细纱", "络筒" })
             {
                 var go = GameObject.Find(pname);
-                if (go != null) anim.floorRingPads.Add(go.transform);
+                if (go == null) continue;
+                // Rotate the actual floor ring mesh child around its own center — NOT the offset parent!
+                var childMr = go.GetComponentInChildren<MeshRenderer>(true);
+                anim.floorRingPads.Add(childMr != null ? childMr.transform : go.transform);
             }
         }
 
@@ -557,7 +694,8 @@ namespace CNC.EditorTools
                 clickVol.transform.position = st.worldPosition;
                 var bc = clickVol.AddComponent<BoxCollider>();
                 bc.isTrigger = true;
-                bc.size = st.index == 8 ? new Vector3(48f, 16f, 54f) : new Vector3(18f, 14f, 22f);
+                // Tight machine-hugging click volume so it never spills into the entrance walking aisle
+                bc.size = st.index == 8 ? new Vector3(36f, 13f, 42f) : new Vector3(14f, 11f, 18f);
 
                 var inter = clickVol.AddComponent<MachineInteractable>();
                 inter.stationIndex = st.index;
@@ -752,13 +890,13 @@ namespace CNC.EditorTools
             hud.btnNextStation = CreateStyleAButton("BtnNextSt", teachRoot.transform, "下一工序 >", 12, true, _vaPillActiveWhite, ColDarkText,
                 new Vector2(0.5f, 1), new Vector2(1, 1), new Vector2(4, -74), new Vector2(0, -44));
 
-            // 3x3 Clean Rounded Step Pills
-            var sgrid = CreateUiRect("StepGrid", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -210), new Vector2(0, -84));
+            // 3x3 Clean Rounded Step Pills (compact 648px total Teaching Island for wide Game Views)
+            var sgrid = CreateUiRect("StepGrid", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -196), new Vector2(0, -82));
             var sglg = sgrid.AddComponent<GridLayoutGroup>();
             sglg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             sglg.constraintCount = 3;
-            sglg.cellSize = new Vector2(82, 36);
-            sglg.spacing = new Vector2(6, 6);
+            sglg.cellSize = new Vector2(82, 34);
+            sglg.spacing = new Vector2(6, 5);
             sglg.childAlignment = TextAnchor.MiddleCenter;
             for (int i = 0; i < 9; i++)
             {
@@ -775,38 +913,38 @@ namespace CNC.EditorTools
                     new Vector2(0, 0), new Vector2(1, 0.48f), Vector2.zero, Vector2.zero);
             }
 
-            // Teaching Goal & Key Points Subcard (extra generous padding so 3 key points never clip)
-            var goalBox = CreateUiRect("GoalBox", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -430), new Vector2(0, -218));
+            // Teaching Goal & Key Points Subcard
+            var goalBox = CreateUiRect("GoalBox", teachRoot.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -396), new Vector2(0, -204));
             AddSliced(goalBox, _vaSubcard, Color.white);
-            hud.teachingGoalText = CreateTmp("GoalTxt", goalBox.transform, "", 12f, false, ColWhite, TextAlignmentOptions.TopLeft,
+            hud.teachingGoalText = CreateTmp("GoalTxt", goalBox.transform, "", 11.5f, false, ColWhite, TextAlignmentOptions.TopLeft,
                 new Vector2(0, 0.56f), new Vector2(1, 1), new Vector2(12, 2), new Vector2(-12, -8));
-            hud.teachingKeyPointsText = CreateTmp("KeyPtsTxt", goalBox.transform, "", 11f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 0.56f), new Vector2(12, 8), new Vector2(-12, 0));
-            hud.teachingKeyPointsText.lineSpacing = 2.5f;
+            hud.teachingKeyPointsText = CreateTmp("KeyPtsTxt", goalBox.transform, "", 10.5f, false, ColSubText, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 0), new Vector2(1, 0.56f), new Vector2(12, 6), new Vector2(-12, 0));
+            hud.teachingKeyPointsText.lineSpacing = 2.0f;
 
             // Interactive Quiz Subcard
-            var quizBox = CreateUiRect("QuizBox", teachRoot.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -438));
+            var quizBox = CreateUiRect("QuizBox", teachRoot.transform, new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -404));
             AddSliced(quizBox, _vaSubcard, Color.white);
-            hud.quizQuestionText = CreateTmp("QuizQ", quizBox.transform, "随堂考核...", 12.5f, true, ColWhite, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(12, -56), new Vector2(-12, -10));
+            hud.quizQuestionText = CreateTmp("QuizQ", quizBox.transform, "随堂考核...", 12f, true, ColWhite, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(12, -52), new Vector2(-12, -8));
             for (int q = 0; q < 3; q++)
             {
-                float yTop = -60 - q * 40;
-                var qBtn = CreateStyleAButton($"QuizOpt_{q}", quizBox.transform, $"选项 {q + 1}", 11.5f, false, _vaPillIdle, ColWhite,
-                    new Vector2(0, 1), new Vector2(1, 1), new Vector2(10, yTop - 34), new Vector2(-10, yTop));
+                float yTop = -54 - q * 36;
+                var qBtn = CreateStyleAButton($"QuizOpt_{q}", quizBox.transform, $"选项 {q + 1}", 11f, false, _vaPillIdle, ColWhite,
+                    new Vector2(0, 1), new Vector2(1, 1), new Vector2(10, yTop - 30), new Vector2(-10, yTop));
                 var qTxt = qBtn.GetComponentInChildren<TextMeshProUGUI>();
                 qTxt.alignment = TextAlignmentOptions.MidlineLeft;
                 qTxt.margin = new Vector4(12, 2, 10, 2);
                 hud.quizOptionButtons[q] = qBtn;
                 hud.quizOptionTexts[q] = qTxt;
             }
-            hud.quizFeedbackText = CreateTmp("QuizFb", quizBox.transform, "", 11.5f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 0), new Vector2(12, 8), new Vector2(-12, 54));
+            hud.quizFeedbackText = CreateTmp("QuizFb", quizBox.transform, "", 11f, false, ColSubText, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 0), new Vector2(1, 0), new Vector2(12, 6), new Vector2(-12, 46));
             teachRoot.SetActive(false);
 
-            // ==================== 3. RIGHT FLOATING AIRY DEVICE INSPECTOR (600px tall, open bottom-right!) ====================
+            // ==================== 3. RIGHT FLOATING AIRY DEVICE INSPECTOR (626px tall, crisp breathing room!) ====================
             var rightCard = CreateUiRect("RightGlassDrawer", main.transform, new Vector2(1, 1), new Vector2(1, 1),
-                new Vector2(-350, -692), new Vector2(-24, -86));
+                new Vector2(-350, -712), new Vector2(-24, -86));
             AddSliced(rightCard, _vaCardGlass, Color.white);
             hud.rightPanelRoot = rightCard;
 
@@ -828,30 +966,30 @@ namespace CNC.EditorTools
                 TextAlignmentOptions.MidlineLeft, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -78), new Vector2(0, -58));
 
             // Clean Rounded Preview Photo
-            var pFrame = CreateUiRect("PreviewFrame", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -214), new Vector2(0, -88));
+            var pFrame = CreateUiRect("PreviewFrame", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -210), new Vector2(0, -86));
             AddSliced(pFrame, _vaSubcard, Color.white);
             var pImgGo = CreateUiRect("PreviewImg", pFrame.transform, Vector2.zero, Vector2.one, new Vector2(6, 6), new Vector2(-6, -6));
             hud.inspectorPreviewImage = pImgGo.AddComponent<UIImage>();
             hud.inspectorPreviewImage.preserveAspect = true;
 
-            // 3 Sleek Rounded Telemetry Bars
-            CreateStyleATelemetryRow(rb.transform, "工作转速", -228, ColSky, out hud.telemetryRpmText, out hud.telemetryRpmBar);
-            CreateStyleATelemetryRow(rb.transform, "电机温度", -268, ColAmber, out hud.telemetryTempText, out hud.telemetryTempBar);
-            CreateStyleATelemetryRow(rb.transform, "实时负荷与功耗", -308, ColMint, out hud.telemetryLoadText, out hud.telemetryLoadBar);
+            // 3 Sleek Rounded Telemetry Bars (44px clean vertical stride, zero label/bar touch!)
+            CreateStyleATelemetryRow(rb.transform, "工作转速", -222, ColSky, out hud.telemetryRpmText, out hud.telemetryRpmBar);
+            CreateStyleATelemetryRow(rb.transform, "电机温度", -266, ColAmber, out hud.telemetryTempText, out hud.telemetryTempBar);
+            CreateStyleATelemetryRow(rb.transform, "实时负荷与功耗", -310, ColMint, out hud.telemetryLoadText, out hud.telemetryLoadBar);
 
             // Hairline Divider
-            var hdiv = CreateUiRect("HDiv", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -356), new Vector2(0, -355));
+            var hdiv = CreateUiRect("HDiv", rb.transform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -360), new Vector2(0, -359));
             hdiv.AddComponent<UIImage>().color = ColSep;
 
-            // Clean Spec Rows (no heavy sub-box!)
-            hud.specsTableText = CreateTmp("SpecsTxt", rb.transform, "", 13, false, ColWhite, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -478), new Vector2(0, -366));
-            hud.specsTableText.lineSpacing = 10f;
+            // Clean Spec Rows (5 crisp rows with generous non-overlapping spacing)
+            hud.specsTableText = CreateTmp("SpecsTxt", rb.transform, "", 12.5f, false, ColWhite, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, -490), new Vector2(0, -370));
+            hud.specsTableText.lineSpacing = 7f;
 
             // Clean Airy Summary
-            hud.processSummaryText = CreateTmp("SumTxt", rb.transform, "", 12.5f, false, ColSubText, TextAlignmentOptions.TopLeft,
-                new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -484));
-            hud.processSummaryText.lineSpacing = 6f;
+            hud.processSummaryText = CreateTmp("SumTxt", rb.transform, "", 12f, false, ColSubText, TextAlignmentOptions.TopLeft,
+                new Vector2(0, 0), new Vector2(1, 1), new Vector2(0, 0), new Vector2(0, -498));
+            hud.processSummaryText.lineSpacing = 5f;
 
             // ==================== 4. BOTTOM FLOATING CENTERED MACOS-STYLE DOCK ====================
             var dock = CreateUiRect("BottomProcessDock", main.transform, new Vector2(0.5f, 0), new Vector2(0.5f, 0),
@@ -898,10 +1036,12 @@ namespace CNC.EditorTools
             hud.crosshairObject = crossGo;
 
             var hintGo = CreateUiRect("FPS_HintPill", canvasGo.transform, new Vector2(0.5f, 1), new Vector2(0.5f, 1),
-                new Vector2(-280, -112), new Vector2(280, -82));
-            AddSliced(hintGo, _vaPillGlass, new Color(1f, 1f, 1f, 0.85f));
-            CreateTmp("HintTxt", hintGo.transform, "自由漫游：WASD 行走 · Shift 加速 · 右键拖拽看四周 · Tab 锁准星 · R 复位", 12, false, ColSubText,
+                new Vector2(-286, -112), new Vector2(286, -82));
+            var hintImg = AddSliced(hintGo, _vaPillGlass, new Color(0.75f, 0.80f, 0.88f, 0.96f));
+            hintImg.raycastTarget = false;
+            var hintTxt = CreateTmp("HintTxt", hintGo.transform, "自由漫游：WASD 行走 · Shift 加速 · 右键拖拽看四周 · Tab 锁准星 · R 复位", 12, true, ColWhite,
                 TextAlignmentOptions.Center, Vector2.zero, Vector2.one, new Vector2(14, 0), new Vector2(-14, 0));
+            hintTxt.raycastTarget = false;
             hud.fpsHintBanner = hintGo;
 
             var tipGo = CreateUiRect("HoverTooltip", canvasGo.transform, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(260, 58));
@@ -931,7 +1071,7 @@ namespace CNC.EditorTools
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = 0.65f;
             go.AddComponent<GraphicRaycaster>();
             return go;
         }
@@ -1038,7 +1178,7 @@ namespace CNC.EditorTools
                 new Vector2(0, 1), new Vector2(0.55f, 1), new Vector2(0, yTop - 18), new Vector2(0, yTop));
             valText = CreateTmp("V", parent, "0", 12.5f, true, ColWhite, TextAlignmentOptions.MidlineRight,
                 new Vector2(0.45f, 1), new Vector2(1, 1), new Vector2(0, yTop - 18), new Vector2(0, yTop));
-            var trk = CreateUiRect("Trk", parent, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, yTop - 28), new Vector2(0, yTop - 22));
+            var trk = CreateUiRect("Trk", parent, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0, yTop - 31), new Vector2(0, yTop - 24));
             AddSliced(trk, _vaBarPill, ColTrack);
             fillImg = CreateBarFill(trk.transform, fillCol, 0.72f);
         }

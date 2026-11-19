@@ -352,9 +352,9 @@ namespace CNC.DigitalTwin
             if (teachingLeftContent != null) teachingLeftContent.SetActive(!isDash);
 
             // Compact 418px floating island in Dashboard mode -> huge open 3D space below!
-            // Smoothly expands to 700px only when viewing Teaching Tour curriculum & quiz.
+            // Smoothly expands to 648px in Teaching Tour mode (clears BottomProcessDock even on 2.3:1 wide views).
             if (leftPanelRect != null)
-                leftPanelRect.sizeDelta = new Vector2(296f, isDash ? 418f : 700f);
+                leftPanelRect.sizeDelta = new Vector2(296f, isDash ? 418f : 648f);
 
             RefreshHeaderButtons();
             RefreshTeachingPanel(_displayedStationIndex);
@@ -470,10 +470,10 @@ namespace CNC.DigitalTwin
             if (telemetryRpmText != null) telemetryRpmText.text = $"{rpm:N0} r/min";
             if (telemetryRpmBar != null) telemetryRpmBar.fillAmount = Mathf.Clamp01(rpm / Mathf.Max(1f, st.nominalRpm * 1.35f));
 
-            if (telemetryTempText != null) telemetryTempText.text = $"{tempC:0.1} °C";
+            if (telemetryTempText != null) telemetryTempText.text = $"{tempC:F1} °C";
             if (telemetryTempBar != null) telemetryTempBar.fillAmount = Mathf.Clamp01(tempC / 75f);
 
-            if (telemetryLoadText != null) telemetryLoadText.text = $"{loadPct:0}% · {powerKw:0.1} kW";
+            if (telemetryLoadText != null) telemetryLoadText.text = $"{loadPct:F0}% · {powerKw:F1} kW";
             if (telemetryLoadBar != null) telemetryLoadBar.fillAmount = Mathf.Clamp01(loadPct / 100f);
 
             if (teachingProgressText != null)

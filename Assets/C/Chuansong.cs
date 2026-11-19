@@ -1,16 +1,19 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Chuansong : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        if(other.transform.tag == "Player")
+        if (other.CompareTag("Player"))
         {
-            other.gameObject.transform.position = new Vector3(40, 8, 380);
-        }       
+            if (CNC.DigitalTwin.CameraRigManager.Instance != null)
+            {
+                CNC.DigitalTwin.CameraRigManager.Instance.FocusHall(CNC.DigitalTwin.WorkshopHall.InspectionWarehouse, false);
+            }
+            else
+            {
+                other.gameObject.transform.position = new Vector3(39.5f, 3.88f, 358f);
+            }
+        }
     }
-
-
 }
