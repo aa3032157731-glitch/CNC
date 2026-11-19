@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class UIMgr : MonoBehaviour
@@ -9,15 +6,16 @@ public class UIMgr : MonoBehaviour
 
     private void Update()
     {
-        RaycastHit[] r = Physics.RaycastAll(this.transform.position, this.transform.forward, 1000, 1 << LayerMask.NameToLayer("JiQi"));
-
-        if(r.Length == 0)
-            obj.gameObject.SetActive(false);
-
-        for (int i = 0; i <r.Length ; i++)
+        // Superseded by CNC.DigitalTwin.MachineRaycaster & DigitalTwinHUD
+        if (CNC.DigitalTwin.DigitalTwinHUD.Instance != null)
         {
-            obj.gameObject.SetActive(true);
+            if (obj != null && obj.activeSelf) obj.SetActive(false);
+            enabled = false;
+            return;
         }
-        
+        if (obj == null) return;
+
+        RaycastHit[] r = Physics.RaycastAll(transform.position, transform.forward, 1000f, 1 << LayerMask.NameToLayer("JiQi"));
+        obj.SetActive(r.Length > 0);
     }
 }

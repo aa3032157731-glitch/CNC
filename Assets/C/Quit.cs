@@ -1,15 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Quit : MonoBehaviour
 {
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Backspace))
+        if (Input.GetKeyDown(KeyCode.Backspace))
         {
-            Application.Quit();
+            if (CNC.DigitalTwin.DigitalTwinHUD.Instance != null)
+                CNC.DigitalTwin.DigitalTwinHUD.Instance.ShowQuitModal();
         }
     }
-
 }

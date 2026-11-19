@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace ECM.Components
 {
@@ -175,6 +176,12 @@ namespace ECM.Components
 
         public virtual void LookRotation(CharacterMovement movement, Transform cameraTransform)
         {
+            UpdateCursorLock();
+
+            // Do not rotate camera while cursor is unlocked (UI interaction mode)
+            if (!_lockCursor || !_isCursorLocked)
+                return;
+
             var yaw = Input.GetAxis("Mouse X") * lateralSensitivity;
             var pitch = Input.GetAxis("Mouse Y") * verticalSensitivity;
 
@@ -211,17 +218,22 @@ namespace ECM.Components
                 if (clampPitch)
                     cameraTransform.localRotation = ClampPitch(cameraTransform.localRotation);
             }
-
-            UpdateCursorLock();
         }
+
+        public bool isCursorLocked => _isCursorLocked;
 
         public virtual void SetCursorLock(bool value)
         {
             lockCursor = value;
+            _isCursorLocked = value;
             if (lockCursor)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
                 return;
-            
-            // We force unlock the cursor if the user disable the cursor locking helper
+            }
+
+            // We force unlock the cursor if the user disables the cursor locking helper
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -229,7 +241,7 @@ namespace ECM.Components
 
         public virtual void UpdateCursorLock()
         {
-            // If the user set "lockCursor" we check & properly lock the cursos
+            // If the user set "lockCursor" we check & properly lock the cursor
 
             if (lockCursor)
                 InternalLockUpdate();
@@ -237,17 +249,21 @@ namespace ECM.Components
 
         protected virtual void InternalLockUpdate()
         {
-            if (Input.GetKeyUp(unlockCursorKey))
+            if (Input.GetKeyUp(unlockCursorKey) || Input.GetKeyUp(KeyCode.Tab))
                 _isCursorLocked = false;
             else if (Input.GetMouseButtonUp(0))
-                _isCursorLocked = true;
+            {
+                bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+                if (!overUI)
+                    _isCursorLocked = true;
+            }
 
             if (_isCursorLocked)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
             }
-            else if (!_isCursorLocked)
+            else
             {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;

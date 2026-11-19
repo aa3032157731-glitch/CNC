@@ -12,6 +12,7 @@ public class juancun : MonoBehaviour
         if (i < 17)
         {
             ++i;
+            CNC.DigitalTwin.SimulationState.Instance?.SetWarehouseSlotCount(i);
             switch (i)
             {
                 case 1:

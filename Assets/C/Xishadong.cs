@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Xishadong : MonoBehaviour
@@ -9,13 +7,18 @@ public class Xishadong : MonoBehaviour
 
     void Update()
     {
-        transform.Translate(Vector3.left * speed * Time.deltaTime);
-        time += Time.deltaTime;
+        var sim = CNC.DigitalTwin.SimulationState.Instance;
+        float mult = (sim != null) ? (sim.isRunning ? sim.simSpeed : 0f) : 1f;
+        float dt = Time.deltaTime * mult;
+        if (dt <= 0f) return;
 
-        if (time >= 8 && time <9)
+        transform.Translate(Vector3.left * speed * dt);
+        time += dt;
+
+        if (time >= 8f)
         {
             speed = -speed;
-            time = 0;
+            time = 0f;
         }
     }
 }
