@@ -68,8 +68,10 @@ namespace CNC.DigitalTwin
         private float _tourTimer;
         private int _tourStationIndex;
 
-        private readonly Vector3 _fpsHall1Spawn = new Vector3(212f, 2.2f, 158f);
-        private readonly Vector3 _fpsHall2Spawn = new Vector3(39.5f, 8.2f, 368f);
+        private readonly Vector3 _fpsHall1Spawn = new Vector3(198f, 2.6f, 156f);
+        private readonly Vector3 _fpsHall2Spawn = new Vector3(39.5f, 8.5f, 368f);
+        private CharacterMovement _fpsMovement;
+        private Rigidbody _fpsRigidbody;
 
         private void Awake()
         {
@@ -84,6 +86,8 @@ namespace CNC.DigitalTwin
             {
                 if (fpsController == null) fpsController = fpsPlayerRoot.GetComponent<BaseFirstPersonController>();
                 if (fpsMouseLook == null) fpsMouseLook = fpsPlayerRoot.GetComponent<MouseLook>();
+                _fpsMovement = fpsPlayerRoot.GetComponent<CharacterMovement>();
+                _fpsRigidbody = fpsPlayerRoot.GetComponent<Rigidbody>();
                 if (fpsCameraAnchor == null && mainCamera != null && mainCamera.transform.IsChildOf(fpsPlayerRoot.transform))
                     fpsCameraAnchor = mainCamera.transform.parent;
             }
@@ -101,8 +105,8 @@ namespace CNC.DigitalTwin
                 SetViewMode(AppLaunchContext.InitialCameraMode);
                 if (CurrentViewMode == CameraViewMode.BirdEyeOrbit)
                 {
-                    FocusHall(WorkshopHall.SpinningHall, true);
                     SetRoofCutaway(true);
+                    FocusHall(WorkshopHall.SpinningHall, true);
                 }
             }
         }
@@ -148,8 +152,16 @@ namespace CNC.DigitalTwin
 
             if (mode == CameraViewMode.FirstPersonWalk)
             {
-                // Restore roof when walking inside!
+                // Restore roof when walking inside & unfreeze FPS player safely on floor
                 SetRoofCutaway(false);
+                if (fpsPlayerRoot != null && fpsPlayerRoot.transform.position.y < 0.5f)
+                    TeleportFpsToHall(CurrentHall);
+                if (_fpsRigidbody != null)
+                {
+                    _fpsRigidbody.isKinematic = false;
+                    _fpsRigidbody.velocity = Vector3.zero;
+                }
+                if (_fpsMovement != null) _fpsMovement.enabled = true;
                 AttachCameraToFps();
                 if (fpsController != null) fpsController.enabled = true;
                 if (fpsMouseLook != null) fpsMouseLook.SetCursorLock(true);
@@ -158,6 +170,12 @@ namespace CNC.DigitalTwin
             {
                 DetachCameraFromFps();
                 if (fpsController != null) fpsController.enabled = false;
+                if (_fpsMovement != null) _fpsMovement.enabled = false;
+                if (_fpsRigidbody != null)
+                {
+                    _fpsRigidbody.velocity = Vector3.zero;
+                    _fpsRigidbody.isKinematic = true;
+                }
                 if (fpsMouseLook != null) fpsMouseLook.SetCursorLock(false);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -194,20 +212,21 @@ namespace CNC.DigitalTwin
             if (hall == WorkshopHall.SpinningHall)
             {
                 _targetPivot = new Vector3(74f, 6f, 145f);
-                _targetYaw = -38f;
-                _targetPitch = 36f;
-                _targetDistance = 178f;
+                _targetYaw = 46f;
+                _targetPitch = 28f;
+                _targetDistance = 168f;
             }
             else
             {
-                _targetPivot = new Vector3(39.5f, 8.5f, 408f);
+                _targetPivot = new Vector3(39.5f, 8.5f, 412f);
                 _targetYaw = 180f;
-                _targetPitch = 28f;
-                _targetDistance = 68f;
+                _targetPitch = 22f;
+                _targetDistance = 64f;
             }
 
             if (instant)
             {
+                _isFlying = false;
                 _currentPivot = _targetPivot;
                 _currentYaw = _targetYaw;
                 _currentPitch = _targetPitch;
@@ -236,6 +255,12 @@ namespace CNC.DigitalTwin
             {
                 DetachCameraFromFps();
                 if (fpsController != null) fpsController.enabled = false;
+                if (_fpsMovement != null) _fpsMovement.enabled = false;
+                if (_fpsRigidbody != null)
+                {
+                    _fpsRigidbody.velocity = Vector3.zero;
+                    _fpsRigidbody.isKinematic = true;
+                }
                 if (fpsMouseLook != null) fpsMouseLook.SetCursorLock(false);
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
@@ -265,6 +290,7 @@ namespace CNC.DigitalTwin
 
             if (instant)
             {
+                _isFlying = false;
                 _currentPivot = _targetPivot;
                 _currentYaw = _targetYaw;
                 _currentPitch = _targetPitch;
@@ -466,14 +492,23 @@ namespace CNC.DigitalTwin
         {
             if (mainCamera == null) return;
             Vector3 pos = ComputeOrbitPosition(_currentPivot, _currentYaw, _currentPitch, _currentDistance);
+            if (pos.y < 2.5f) pos.y = 2.5f; // Never clip beneath the factory floor
             mainCamera.transform.position = pos;
             mainCamera.transform.LookAt(_currentPivot, Vector3.up);
         }
 
         private static Vector3 ComputeOrbitPosition(Vector3 pivot, float yawDeg, float pitchDeg, float dist)
         {
-            Quaternion rot = Quaternion.Euler(pitchDeg, yawDeg, 0f);
-            return pivot + rot * (Vector3.forward * dist);
+            // Spherical elevation coordinates: positive pitchDeg ALWAYS elevates camera ABOVE pivot
+            float yawRad = yawDeg * Mathf.Deg2Rad;
+            float pitchRad = pitchDeg * Mathf.Deg2Rad;
+            float cosP = Mathf.Cos(pitchRad);
+            Vector3 offset = new Vector3(
+                Mathf.Sin(yawRad) * cosP,
+                Mathf.Sin(pitchRad),
+                Mathf.Cos(yawRad) * cosP
+            ) * dist;
+            return pivot + offset;
         }
     }
 }
