@@ -94,7 +94,7 @@ namespace CNC.DigitalTwin
             AppLaunchContext.InitialMode = mode;
             AppLaunchContext.InitialCameraMode = mode == AppMode.TeachingTour
                 ? CameraViewMode.StationFocus
-                : CameraViewMode.BirdEyeOrbit;
+                : CameraViewMode.FirstPersonWalk;
             AppLaunchContext.InitialStationIndex = mode == AppMode.TeachingTour ? 0 : -1;
             StartCoroutine(LoadSceneRoutine(1));
         }

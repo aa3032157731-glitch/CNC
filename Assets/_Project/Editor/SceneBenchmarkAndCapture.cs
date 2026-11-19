@@ -6,7 +6,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.SceneManagement;
 
 namespace CNC.EditorTools
 {
@@ -18,16 +17,16 @@ namespace CNC.EditorTools
             Step1_URPAndAssetSetup.RunUrpAndFontsOnly();
             Step2_ModelingAndRenderingOptimizer.Run();
             Step3_BuildFrontendScenes.Run();
-            SceneBenchmarkAndCapture.CaptureAfter();
-            Debug.Log("[CNC PIPELINE] ALL STEPS + AFTER BENCHMARK COMPLETED SUCCESSFULLY!");
+            SceneBenchmarkAndCapture.CaptureStyleA();
+            Debug.Log("[CNC PIPELINE] ALL STEPS + STYLE A CAPTURE COMPLETED!");
         }
 
-        public static void RunStep2And3AndCapture()
+        public static void RunStyleAAndCapture()
         {
-            Step2_ModelingAndRenderingOptimizer.Run();
             Step3_BuildFrontendScenes.Run();
-            SceneBenchmarkAndCapture.CaptureAfter();
-            Debug.Log("[CNC PIPELINE] STEP 2 + 3 + AFTER BENCHMARK COMPLETED SUCCESSFULLY!");
+            SceneBenchmarkAndCapture.VerifyStyleAScenesAndTests();
+            SceneBenchmarkAndCapture.CaptureStyleA();
+            Debug.Log("[CNC PIPELINE] STYLE A + SCENE FIXES + TESTS + CAPTURE COMPLETED!");
         }
     }
 
@@ -35,175 +34,196 @@ namespace CNC.EditorTools
     {
         private const string ArtifactShotDir = @"C:\Users\qqcom\.gemini\antigravity\brain\8cf605aa-ffcf-453b-9a7e-a7b8353edcb5\screenshots";
 
-        public static void CaptureBefore()
+        public static void VerifyStyleAScenesAndTests()
         {
-            CaptureSuite("before", false);
-        }
-
-        [MenuItem("CNC Optimize/Capture After Screenshots & Metrics")]
-        public static void CaptureAfter()
-        {
-            CaptureSuite("after", true);
-        }
-
-        private static void CaptureSuite(string tag, bool isAfter)
-        {
-            Directory.CreateDirectory(ArtifactShotDir);
             var sb = new StringBuilder();
-            sb.AppendLine($"=== CNC BENCHMARK ({tag.ToUpper()}) ===");
-            sb.AppendLine($"Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine($"RenderPipeline: {(UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null ? UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline.name : "Built-in RP")}");
+            int pass = 0, fail = 0;
 
-            // 1. Open SampleScene and collect accurate metrics
-            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity", OpenSceneMode.Single);
-
-            int totalRenderers = 0;
-            int activeRenderers = 0;
-            int lod0Renderers = 0;
-            int staticRenderers = 0;
-            int instancedMats = 0;
-            int totalMatSlots = 0;
-            long totalTrisAllLods = 0;
-            long totalTrisLod0Only = 0;
-            long totalVertsLod0Only = 0;
-            int lodGroups = 0;
-            int nonConvexMeshColliders = 0;
-            int pinkShaderSlots = 0;
-
-            var meshRenderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>(true);
-            foreach (var mr in meshRenderers)
+            void Check(string name, bool cond, string detail = "")
             {
-                totalRenderers++;
-                if (mr.gameObject.activeInHierarchy && mr.enabled) activeRenderers++;
-                if (GameObjectUtility.GetStaticEditorFlags(mr.gameObject) != 0) staticRenderers++;
-
-                bool isLowerLod = mr.gameObject.name == "LOD1" || mr.gameObject.name == "LOD2";
-                if (!isLowerLod) lod0Renderers++;
-
-                var mf = mr.GetComponent<MeshFilter>();
-                if (mf != null && mf.sharedMesh != null)
-                {
-                    long tris = 0;
-                    for (int s = 0; s < mf.sharedMesh.subMeshCount; s++)
-                        tris += (long)(mf.sharedMesh.GetIndexCount(s) / 3);
-                    totalTrisAllLods += tris;
-                    if (!isLowerLod)
-                    {
-                        totalTrisLod0Only += tris;
-                        totalVertsLod0Only += mf.sharedMesh.vertexCount;
-                    }
-                }
-
-                foreach (var mat in mr.sharedMaterials)
-                {
-                    if (mat == null) continue;
-                    totalMatSlots++;
-                    if (mat.enableInstancing) instancedMats++;
-                    if (isAfter && mat.shader != null && (mat.shader.name == "Standard" || mat.shader.name.Contains("Error")))
-                        pinkShaderSlots++;
-                }
+                if (cond) { pass++; sb.AppendLine($"[PASS] {name}" + (string.IsNullOrEmpty(detail) ? "" : $" ({detail})")); }
+                else { fail++; sb.AppendLine($"[FAIL] {name}" + (string.IsNullOrEmpty(detail) ? "" : $" ({detail})")); }
             }
 
-            lodGroups = UnityEngine.Object.FindObjectsOfType<LODGroup>(true).Length;
-            foreach (var mc in UnityEngine.Object.FindObjectsOfType<MeshCollider>(true))
-                if (!mc.convex) nonConvexMeshColliders++;
+            sb.AppendLine("=== CNC STYLE A AUTOMATED TEST REPORT ===");
 
-            sb.AppendLine($"Total MeshRenderers: {totalRenderers} (LOD0/Base: {lod0Renderers}, Active: {activeRenderers}, Static: {staticRenderers})");
-            sb.AppendLine($"LOD0 Vertices: {totalVertsLod0Only:N0}");
-            sb.AppendLine($"LOD0 Triangles: {totalTrisLod0Only:N0} (All LODs stored: {totalTrisAllLods:N0})");
-            sb.AppendLine($"Material Slots: {totalMatSlots} (GPU Instancing enabled: {instancedMats}, Legacy/Error shaders: {pinkShaderSlots})");
-            sb.AppendLine($"LODGroups: {lodGroups}");
-            sb.AppendLine($"Non-Convex MeshColliders: {nonConvexMeshColliders}");
+            // 1. Test Play.unity
+            EditorSceneManager.OpenScene("Assets/Scenes/Play.unity", OpenSceneMode.Single);
+            var startCtrl = UnityEngine.Object.FindObjectOfType<StartScreenController>();
+            Check("Play.unity: StartScreenController present", startCtrl != null);
+            if (startCtrl != null)
+            {
+                Check("Play.unity: All CTA & Modal buttons wired",
+                    startCtrl.btnEnterDashboard != null && startCtrl.btnEnterTeaching != null &&
+                    startCtrl.btnOpenSettings != null && startCtrl.btnQuit != null &&
+                    startCtrl.loadingOverlay != null && startCtrl.loadingBarFill != null &&
+                    startCtrl.settingsModal != null);
+            }
+            var playScaler = UnityEngine.Object.FindObjectOfType<UnityEngine.UI.CanvasScaler>();
+            Check("Play.unity: CanvasScaler 1920x1080", playScaler != null &&
+                playScaler.uiScaleMode == UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize &&
+                playScaler.referenceResolution == new Vector2(1920, 1080));
+            Check("Play.unity: Zero missing scripts", CountMissingScriptsInScene() == 0);
 
-            // Render 3D Workshop Shots (Pure 3D first, then UI + 3D composite shots!)
+            // 2. Test SampleScene.unity
+            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity", OpenSceneMode.Single);
+            Check("SampleScene: Zero missing scripts", CountMissingScriptsInScene() == 0);
+
+            var sim = UnityEngine.Object.FindObjectOfType<SimulationState>();
+            Check("SampleScene: SimulationState & 9-station catalog", sim != null && sim.catalog != null && sim.catalog.stations.Count == 9);
+            if (sim != null && sim.catalog != null && sim.catalog.stations.Count == 9)
+            {
+                bool allSprites = true;
+                foreach (var st in sim.catalog.stations) if (st.previewSprite == null) allSprites = false;
+                Check("SampleScene: All 9 stations have preview sprites", allSprites);
+                Check("SampleScene: ST-04 末并 text fixed (not 精梳机)", !sim.catalog.stations[3].processSummary.Contains("精梳机"));
+            }
+
+            var camRig = UnityEngine.Object.FindObjectOfType<CameraRigManager>();
+            Check("SampleScene: CameraRigManager defaults to FirstPersonWalk",
+                camRig != null && AppLaunchContext.InitialCameraMode == CameraViewMode.FirstPersonWalk &&
+                camRig.mainCamera != null && camRig.fpsPlayerRoot != null && camRig.fpsController != null && camRig.fpsMouseLook != null);
+            Check("SampleScene: Roof Cutaway meshes registered",
+                camRig != null && camRig.workshop1RoofObjects.Count > 0 && camRig.workshop2RoofObjects.Count > 0,
+                camRig != null ? $"W1={camRig.workshop1RoofObjects.Count}, W2={camRig.workshop2RoofObjects.Count}" : "");
+
+            if (camRig != null && camRig.fpsPlayerRoot != null)
+            {
+                Vector3 sp = camRig.fpsPlayerRoot.transform.position;
+                bool hasFloor = Physics.Raycast(sp + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 15f);
+                Check("SampleScene: FPS spawn grounded over solid floor collider", hasFloor && sp.y >= 1.5f,
+                    hasFloor ? $"spawn={sp}, floorY={hit.point.y:F2} ({hit.collider.name})" : $"spawn={sp}, NO FLOOR HIT");
+            }
+
+            var hud = UnityEngine.Object.FindObjectOfType<DigitalTwinHUD>();
+            Check("SampleScene: DigitalTwinHUD & Style A sprites wired",
+                hud != null && hud.spPillActiveWhite != null && hud.spPillActiveSky != null &&
+                hud.btnModeDashboard != null && hud.btnModeTeaching != null &&
+                hud.btnCamFps != null && hud.btnCamOrbit != null && hud.btnCamTour != null &&
+                hud.btnSimPlayPause != null && hud.btnSpeedCycle != null && hud.btnToggleStationRun != null &&
+                hud.flowNodeButtons != null && hud.flowNodeButtons.Length == 9 && hud.flowNodeButtons[8] != null &&
+                hud.warehouseSlotCells != null && hud.warehouseSlotCells.Length == 16 && hud.warehouseSlotCells[15] != null);
+
+            // Particle smoke shader verification
+            var psrs = UnityEngine.Object.FindObjectsOfType<ParticleSystemRenderer>(true);
+            int badParticles = 0;
+            foreach (var p in psrs)
+            {
+                if (p.sharedMaterial == null || p.sharedMaterial.shader == null ||
+                    !p.sharedMaterial.shader.name.Contains("Particles"))
+                    badParticles++;
+            }
+            Check("SampleScene: All ParticleSystemRenderers use URP Particle shader (no black clumps)",
+                badParticles == 0, $"total={psrs.Length}, bad={badParticles}");
+
+            // Floor holo pad shader verification
+            var padMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Materials/Mat_HoloFloorPad.mat");
+            Check("SampleScene: Floor pad uses transparent URP/Unlit ring",
+                padMat != null && padMat.shader != null && padMat.shader.name == "Universal Render Pipeline/Unlit" && padMat.GetFloat("_Surface") > 0.5f);
+
+            var interactables = UnityEngine.Object.FindObjectsOfType<MachineInteractable>(true);
+            var markers = UnityEngine.Object.FindObjectsOfType<WorldStationMarker>(true);
+            Check("SampleScene: 9 clickable MachineInteractables & 9 WorldStationMarkers",
+                interactables.Length == 9 && markers.Length == 9, $"inter={interactables.Length}, markers={markers.Length}");
+
+            sb.AppendLine($"SUMMARY: {pass} PASSED, {fail} FAILED");
+            string report = sb.ToString();
+            Directory.CreateDirectory(ArtifactShotDir);
+            File.WriteAllText(Path.Combine(ArtifactShotDir, "styleA_test_report.txt"), report, Encoding.UTF8);
+            Debug.Log(report);
+            if (fail > 0)
+                Debug.LogError($"[CNC TEST] {fail} test(s) failed! See styleA_test_report.txt");
+        }
+
+        private static int CountMissingScriptsInScene()
+        {
+            int missing = 0;
+            foreach (var go in UnityEngine.Object.FindObjectsOfType<GameObject>(true))
+            {
+                var comps = go.GetComponents<Component>();
+                for (int i = 0; i < comps.Length; i++)
+                    if (comps[i] == null) missing++;
+            }
+            return missing;
+        }
+
+        [MenuItem("CNC Optimize/Capture Style A Verification Screenshots")]
+        public static void CaptureStyleA()
+        {
+            Directory.CreateDirectory(ArtifactShotDir);
+            EditorSceneManager.OpenScene("Assets/Scenes/SampleScene.unity", OpenSceneMode.Single);
+
             var hudCanvasGo = GameObject.Find("HUD_Canvas");
             var hudCanvas = hudCanvasGo != null ? hudCanvasGo.GetComponent<Canvas>() : null;
             var hudComp = hudCanvasGo != null ? hudCanvasGo.GetComponent<DigitalTwinHUD>() : null;
-            var camRig = UnityEngine.Object.FindObjectOfType<CameraRigManager>();
+            var cat = AssetDatabase.LoadAssetAtPath<WorkshopCatalog>("Assets/_Project/Configs/WorkshopCatalog.asset");
 
-            // Shot 1: Pure 3D Workshop 1 Machines Close-Up (matches before_02 exact framing!)
-            RenderShot(Path.Combine(ArtifactShotDir, $"{tag}_02_workshop1_machines.png"),
-                new Vector3(195f, 12f, 95f), new Vector3(135f, 5f, 70f), 55f, null);
-
-            // Shot 2: Pure 3D Workshop 2 Warehouse & Inspection (matches before_03 exact framing!)
-            RenderShot(Path.Combine(ArtifactShotDir, $"{tag}_03_workshop2_warehouse.png"),
-                new Vector3(38f, 14f, 365f), new Vector3(52f, 10f, 435f), 55f, null);
-
-            // Shot 3: Pure 3D Spinning Hall Mid (matches before_04 exact framing!)
-            RenderShot(Path.Combine(ArtifactShotDir, $"{tag}_04_spinning_hall_mid.png"),
-                new Vector3(105f, 14f, 250f), new Vector3(20f, 6f, 180f), 55f, null);
-
-            // Shot 4: Bird's-Eye Overview WITH Roof Cutaway + Full Digital Twin Dashboard HUD (1920x1080)!
-            if (isAfter && hudCanvas != null)
+            if (hudComp != null && cat != null && cat.stations.Count > 0)
             {
-                // Populate sample preview & text in editor mode for accurate capture
+                var st0 = cat.stations[0];
+                if (hudComp.inspectorPreviewImage != null) hudComp.inspectorPreviewImage.sprite = st0.previewSprite;
+                if (hudComp.specsTableText != null)
+                    hudComp.specsTableText.text = "<color=#94A3B8>打手宽度</color>    <b>2300</b> <color=#7DD3FC>mm</color>\n<color=#94A3B8>额定产量</color>    <b>≤ 2400</b> <color=#7DD3FC>kg/h</color>\n<color=#94A3B8>装机功率</color>    <b>14.7</b> <color=#7DD3FC>kW</color>\n<color=#94A3B8>设备净重</color>    <b>4050</b> <color=#7DD3FC>kg</color>";
+                if (hudComp.processSummaryText != null) hudComp.processSummaryText.text = st0.processSummary;
+                if (hudComp.telemetryRpmText != null) hudComp.telemetryRpmText.text = "964 r/min";
+                if (hudComp.telemetryTempText != null) hudComp.telemetryTempText.text = "41.3 °C";
+                if (hudComp.telemetryLoadText != null) hudComp.telemetryLoadText.text = "84% · 14.6 kW";
+            }
+
+            // 1. Default First-Person Walk Entrance View + Style A HUD
+            RenderShot(Path.Combine(ArtifactShotDir, "styleA_01_walk_entrance.png"),
+                new Vector3(198f, 4.2f, 156f), new Vector3(145f, 5.5f, 128f), 55f, hudCanvas, 1920, 1080);
+
+            // 2. ST-01 Focus (Verify Black Smoke Clumps ELIMINATED!)
+            if (cat != null && cat.stations.Count > 0)
+            {
+                var st0 = cat.stations[0];
+                RenderShot(Path.Combine(ArtifactShotDir, "styleA_02_st01_smoke_fixed.png"),
+                    st0.focusCameraPos, st0.focusLookAtPos, 54f, hudCanvas, 1920, 1080);
+            }
+
+            // 3. ST-05 Focus (Verify Unobstructed Hero View + Zero Cyan Floor Square!)
+            if (cat != null && cat.stations.Count > 4)
+            {
+                var st4 = cat.stations[4];
                 if (hudComp != null)
                 {
-                    var cat = AssetDatabase.LoadAssetAtPath<WorkshopCatalog>("Assets/_Project/Configs/WorkshopCatalog.asset");
-                    if (cat != null && cat.stations.Count > 0)
-                    {
-                        var st = cat.stations[0];
-                        if (hudComp.inspectorPreviewImage != null) hudComp.inspectorPreviewImage.sprite = st.previewSprite;
-                        if (hudComp.specsTableText != null)
-                            hudComp.specsTableText.text = "<color=#8BB5D9>抓棉打手宽度：</color><b>2300</b> <color=#5CE6FF>mm</color>\n<color=#8BB5D9>额定产量：</color><b>≤ 2400</b> <color=#5CE6FF>kg/h</color>\n<color=#8BB5D9>安装功率：</color><b>14.7</b> <color=#5CE6FF>kW</color>\n<color=#8BB5D9>整机尺寸：</color><b>2580×1230×2975</b> <color=#5CE6FF>mm</color>\n<color=#8BB5D9>设备净重：</color><b>4050</b> <color=#5CE6FF>kg</color>";
-                        if (hudComp.processSummaryText != null) hudComp.processSummaryText.text = st.processSummary;
-                        if (hudComp.eventLogText != null)
-                            hudComp.eventLogText.text = "<color=#6E8EAD>[20:45:12]</color> <color=#2AE87A>URP 高画质渲染引擎就绪</color>\n<color=#6E8EAD>[20:45:14]</color> <color=#5CE6FF>全厂 9 大纺纱工段在线联机</color>\n<color=#6E8EAD>[20:45:18]</color> <color=#5CE6FF>AGV 编队（6台）进入巡航状态</color>\n<color=#6E8EAD>[20:45:21]</color> <color=#FAB024>ST-09 视觉检测拦截 1 件不良纱筒</color>";
-                        if (hudComp.telemetryRpmText != null) hudComp.telemetryRpmText.text = "964 r/min";
-                        if (hudComp.telemetryTempText != null) hudComp.telemetryTempText.text = "41.3 °C";
-                        if (hudComp.telemetryPowerText != null) hudComp.telemetryPowerText.text = "14.6 kW";
-                        if (hudComp.telemetryLoadText != null) hudComp.telemetryLoadText.text = "84%";
-                    }
+                    if (hudComp.inspectorCodeText != null) hudComp.inspectorCodeText.text = $"{st4.code} · {st4.shortName}";
+                    if (hudComp.inspectorNameText != null) hudComp.inspectorNameText.text = st4.name;
+                    if (hudComp.inspectorEngNameText != null) hudComp.inspectorEngNameText.text = st4.englishName;
+                    if (hudComp.inspectorPreviewImage != null) hudComp.inspectorPreviewImage.sprite = st4.previewSprite;
+                    if (hudComp.processSummaryText != null) hudComp.processSummaryText.text = st4.processSummary;
                 }
+                RenderShot(Path.Combine(ArtifactShotDir, "styleA_03_st05_fixed_angle.png"),
+                    st4.focusCameraPos, st4.focusLookAtPos, 54f, hudCanvas, 1920, 1080);
 
-                // Hide roof for Bird's-Eye shot
-                if (camRig != null)
-                    foreach (var ro in camRig.workshop1RoofObjects) if (ro != null) ro.SetActive(false);
-
-                RenderShot(Path.Combine(ArtifactShotDir, $"{tag}_01_workshop1_birdeye_dashboard.png"),
-                    new Vector3(195f, 82f, 255f), new Vector3(72f, 6f, 138f), 50f, hudCanvas, 1920, 1080);
-
-                // Restore roof & capture Teaching Tour Mode shot focused on ST-01/ST-03!
-                if (camRig != null)
-                    foreach (var ro in camRig.workshop1RoofObjects) if (ro != null) ro.SetActive(true);
-
+                // 3b. Teaching Tour Mode capture (expanded left island + quiz)
                 if (hudComp != null)
                 {
                     if (hudComp.dashboardLeftContent != null) hudComp.dashboardLeftContent.SetActive(false);
                     if (hudComp.teachingLeftContent != null) hudComp.teachingLeftContent.SetActive(true);
-                    if (hudComp.btnModeDashboard != null) hudComp.btnModeDashboard.GetComponent<UnityEngine.UI.Image>().color = hudComp.colorBtnIdle;
-                    if (hudComp.btnModeTeaching != null) hudComp.btnModeTeaching.GetComponent<UnityEngine.UI.Image>().color = hudComp.colorAccentCyan;
-                    var cat = AssetDatabase.LoadAssetAtPath<WorkshopCatalog>("Assets/_Project/Configs/WorkshopCatalog.asset");
-                    if (cat != null && cat.stations.Count > 0)
-                    {
-                        var st = cat.stations[0];
-                        if (hudComp.teachingGoalText != null) hudComp.teachingGoalText.text = $"<color=#00DCFF>【{st.code} 教学目标】</color>\n{st.teachingGoal}";
-                        if (hudComp.teachingKeyPointsText != null) hudComp.teachingKeyPointsText.text = string.Join("\n", st.teachingKeyPoints);
-                        if (hudComp.quizQuestionText != null && st.quiz != null) hudComp.quizQuestionText.text = $"随堂问答：{st.quiz.question}";
-                        for (int q = 0; q < 3 && st.quiz != null && q < st.quiz.options.Length; q++)
-                            if (hudComp.quizOptionTexts[q] != null) hudComp.quizOptionTexts[q].text = st.quiz.options[q];
-                    }
+                    if (hudComp.leftPanelRect != null) hudComp.leftPanelRect.sizeDelta = new Vector2(296f, 700f);
+                    if (hudComp.teachingGoalText != null) hudComp.teachingGoalText.text = $"<color=#7DD3FC><b>{st4.code} 教学目标</b></color>\n{st4.teachingGoal}";
+                    if (hudComp.teachingKeyPointsText != null) hudComp.teachingKeyPointsText.text = string.Join("\n", st4.teachingKeyPoints);
+                    if (hudComp.quizQuestionText != null && st4.quiz != null) hudComp.quizQuestionText.text = $"随堂考核：{st4.quiz.question}";
+                    for (int q = 0; q < 3 && st4.quiz != null && q < st4.quiz.options.Length; q++)
+                        if (hudComp.quizOptionTexts[q] != null) hudComp.quizOptionTexts[q].text = st4.quiz.options[q];
                 }
-
-                RenderShot(Path.Combine(ArtifactShotDir, $"{tag}_05_teaching_tour_hud.png"),
-                    new Vector3(200f, 14f, 138f), new Vector3(148f, 6f, 92f), 52f, hudCanvas, 1920, 1080);
+                RenderShot(Path.Combine(ArtifactShotDir, "styleA_04_teaching_mode.png"),
+                    st4.focusCameraPos, st4.focusLookAtPos, 54f, hudCanvas, 1920, 1080);
             }
 
-            // 2. Open Play.unity and capture Start Screen with UI!
+            // 4. Play.unity Style A VisionOS Start Screen
             EditorSceneManager.OpenScene("Assets/Scenes/Play.unity", OpenSceneMode.Single);
             var playCam = Camera.main ?? UnityEngine.Object.FindObjectOfType<Camera>();
             var playCanvas = UnityEngine.Object.FindObjectOfType<Canvas>();
             if (playCam != null)
-            {
-                RenderWithCanvas(playCam, playCanvas, Path.Combine(ArtifactShotDir, $"{tag}_00_play_start.png"), 1920, 1080);
-            }
+                RenderWithCanvas(playCam, playCanvas, Path.Combine(ArtifactShotDir, "styleA_00_play_start.png"), 1920, 1080);
 
-            string reportPath = Path.Combine(ArtifactShotDir, $"{tag}_metrics.txt");
-            File.WriteAllText(reportPath, sb.ToString(), Encoding.UTF8);
-            Debug.Log(sb.ToString());
+            Debug.Log("[CNC StyleA] Captured all Style A verification screenshots!");
         }
 
-        private static void RenderShot(string outPath, Vector3 camPos, Vector3 lookAt, float fov, Canvas uiCanvas, int width = 1280, int height = 720)
+        private static void RenderShot(string outPath, Vector3 camPos, Vector3 lookAt, float fov, Canvas uiCanvas, int width, int height)
         {
             var go = new GameObject("__TempCaptureCam");
             var cam = go.AddComponent<Camera>();

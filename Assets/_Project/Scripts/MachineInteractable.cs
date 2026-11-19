@@ -79,7 +79,10 @@ namespace CNC.DigitalTwin
                 if (mf == null || mf.sharedMesh == null) continue;
                 var srcMr = mf.GetComponent<MeshRenderer>();
                 if (srcMr == null || !srcMr.enabled) continue;
-                if (mf.gameObject.name.Contains("__HighlightOverlay") || mf.gameObject.name.Contains("Beacon")) continue;
+                string gname = mf.gameObject.name;
+                if (gname.Contains("__HighlightOverlay") || gname.Contains("Beacon") || gname.Contains("Plane")) continue;
+                // Exclude thin floor trigger pads so they never render as solid cyan squares
+                if (srcMr.bounds.size.y < 0.35f) continue;
 
                 var ov = new GameObject("__HighlightOverlay");
                 ov.transform.SetParent(mf.transform, false);

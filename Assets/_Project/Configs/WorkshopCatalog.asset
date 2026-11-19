@@ -201,12 +201,12 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u5E76\u6761\u5DE5\u5E8F\u901A\u8FC7\u201C\u5E76\u5408+\u7275\u4F38+\u81EA\u8C03\u5300\u6574\u201D\u4E09\u534F\u540C\uFF0C\u6838\u5FC3\u89E3\u51B3\u68C9\u6761\u5747\u5300\u5EA6\u4E0E\u7EA4\u7EF4\u987A\u76F4\u5EA6\u95EE\u9898\u3002"
     previewSprite: {fileID: 21300000, guid: d67b537519d0679469f2842604a6fcb6, type: 3}
     previewSpritePath: Assets/Fanyi/c5fa63cfccfce28eff817b3b0561815.jpg
-    worldPosition: {x: 135, y: 5, z: 187.9}
-    focusCameraPos: {x: 165, y: 15, z: 212}
-    focusLookAtPos: {x: 135, y: 4.5, z: 184}
+    worldPosition: {x: 123.3, y: 6, z: 114}
+    focusCameraPos: {x: 152, y: 14, z: 134}
+    focusLookAtPos: {x: 123.3, y: 5.2, z: 108}
     sceneTargetNames:
-    - "\u672B\u5E76"
     - "\u5377\u7B52\u50A8\u5B58(1)"
+    - "\u672B\u5E76"
     nominalRpm: 880
     nominalTempC: 43
     nominalPowerKw: 9.2
@@ -249,12 +249,12 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7CBE\u68B3\u673A\u901A\u8FC7\u5254\u9664\u77ED\u7EA4\u7EF4\u4E0E\u68C9\u7ED3\uFF0C\u4F7F\u7EA4\u7EF4\u9AD8\u5EA6\u987A\u76F4\u6574\u9F50\uFF0C\u662F\u751F\u4EA7\u9AD8\u652F\u9AD8\u5BC6\u9762\u6599\u7EB1\u7EBF\u7684\u5FC5\u5907\u5DE5\u827A\u3002"
     previewSprite: {fileID: 21300000, guid: 469ea73e88e22274bb07344f809b93e4, type: 3}
     previewSpritePath: Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg
-    worldPosition: {x: 84, y: 5, z: 234}
-    focusCameraPos: {x: 114, y: 16, z: 256}
-    focusLookAtPos: {x: 78, y: 5, z: 224}
+    worldPosition: {x: 47.3, y: 7, z: 194}
+    focusCameraPos: {x: 62, y: 14.5, z: 246}
+    focusLookAtPos: {x: 36, y: 7, z: 194}
     sceneTargetNames:
-    - "\u7CBE\u68B3"
     - "\u5377\u7B52\u50A8\u5B58(1) (1)"
+    - "\u68B3\u5377\u4E00\u4F53\uFF081\uFF09 (2)"
     nominalRpm: 540
     nominalTempC: 44.6
     nominalPowerKw: 11
@@ -298,11 +298,10 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7C97\u7EB1\u637B\u5EA6\u53EA\u9700\u6EE1\u8DB3\u5377\u7ED5\u3001\u642C\u8FD0\u548C\u7EC6\u7EB1\u9000\u7ED5\u4E0D\u65AD\u5934\u5373\u53EF\uFF0C\u8FC7\u5927\u637B\u5EA6\u4F1A\u589E\u52A0\u7EC6\u7EB1\u7275\u4F38\u963B\u529B\u5BFC\u81F4\u51FA\u786C\u5934\u6216\u6761\u5E72\u6076\u5316\u3002"
     previewSprite: {fileID: 21300000, guid: 0b71b6aae3b9db049b43ee246274fada, type: 3}
     previewSpritePath: Assets/Fanyi/b6a4d20db8528f753f21003231b6934.jpg
-    worldPosition: {x: 42, y: 8, z: 150}
-    focusCameraPos: {x: 76, y: 17.5, z: 184}
-    focusLookAtPos: {x: 42, y: 8, z: 142}
+    worldPosition: {x: 45.9, y: 9, z: 132}
+    focusCameraPos: {x: 84, y: 16.5, z: 162}
+    focusLookAtPos: {x: 45.9, y: 8.5, z: 130}
     sceneTargetNames:
-    - "\u7C97\u7EB1"
     - "\u4EA7\u7EBF01"
     - "\u4EA7\u7EBF01 (1)"
     nominalRpm: 1320
@@ -351,10 +350,9 @@ MonoBehaviour:
     previewSprite: {fileID: 21300000, guid: 469ea73e88e22274bb07344f809b93e4, type: 3}
     previewSpritePath: Assets/Fanyi/e969ddd78eea8dedceb1b70e1724302.jpg
     worldPosition: {x: -16.2, y: 10, z: 130}
-    focusCameraPos: {x: 24, y: 18, z: 168}
-    focusLookAtPos: {x: -16.2, y: 9.5, z: 130}
+    focusCameraPos: {x: 18, y: 16, z: 158}
+    focusLookAtPos: {x: -16.2, y: 9.5, z: 128}
     sceneTargetNames:
-    - "\u7EC6\u7EB1"
     - "\u6D17\u7802\u673A01"
     - "\u6D17\u7802\u673A01 (2)"
     nominalRpm: 18500
@@ -400,11 +398,10 @@ MonoBehaviour:
       explanation: "\u89E3\u6790\uFF1A\u7EDC\u7B52\u65E2\u662F\u7EBA\u7EB1\u54C1\u8D28\u7684\u6700\u540E\u628A\u5173\uFF08\u7535\u5B50\u6E05\u7EB1\uFF09\uFF0C\u53C8\u662F\u6EE1\u8DB3\u9AD8\u901F\u6574\u7ECF/\u7EC7\u9020\u5927\u5377\u88C5\u8FDE\u7EED\u9000\u7ED5\u7684\u57FA\u7840\u3002"
     previewSprite: {fileID: 21300000, guid: 6c4f2e18d5b46904bbc0132f35a6d726, type: 3}
     previewSpritePath: Assets/Fanyi/1cb8be29d30766661488f22f213bb84.jpg
-    worldPosition: {x: -20, y: 8.5, z: 236}
-    focusCameraPos: {x: 18, y: 17.5, z: 268}
-    focusLookAtPos: {x: -20, y: 8, z: 236}
+    worldPosition: {x: -22, y: 9, z: 240}
+    focusCameraPos: {x: 16, y: 15.5, z: 266}
+    focusLookAtPos: {x: -22, y: 8.5, z: 238}
     sceneTargetNames:
-    - "\u7EDC\u7B52"
     - "\u7262\u7B52\u673A"
     - "\u7262\u7B52\u673A (1)"
     nominalRpm: 1950

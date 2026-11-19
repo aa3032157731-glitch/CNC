@@ -178,8 +178,13 @@ namespace ECM.Components
         {
             UpdateCursorLock();
 
-            // Do not rotate camera while cursor is unlocked (UI interaction mode)
-            if (!_lockCursor || !_isCursorLocked)
+            // Support BOTH classic locked-cursor FPS look (toggle via Tab) AND intuitive Right-Mouse-Drag look
+            // while cursor remains free for clicking VisionOS UI controls!
+            bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            bool rightDragLook = !_isCursorLocked && Input.GetMouseButton(1) && !overUI;
+            if (!_lockCursor && !rightDragLook)
+                return;
+            if (!_isCursorLocked && !rightDragLook)
                 return;
 
             var yaw = Input.GetAxis("Mouse X") * lateralSensitivity;
@@ -224,16 +229,14 @@ namespace ECM.Components
 
         public virtual void SetCursorLock(bool value)
         {
-            lockCursor = value;
+            lockCursor = true;
             _isCursorLocked = value;
-            if (lockCursor)
+            if (_isCursorLocked)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
                 return;
             }
-
-            // We force unlock the cursor if the user disables the cursor locking helper
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -241,22 +244,15 @@ namespace ECM.Components
 
         public virtual void UpdateCursorLock()
         {
-            // If the user set "lockCursor" we check & properly lock the cursor
-
-            if (lockCursor)
-                InternalLockUpdate();
+            InternalLockUpdate();
         }
 
         protected virtual void InternalLockUpdate()
         {
-            if (Input.GetKeyUp(unlockCursorKey) || Input.GetKeyUp(KeyCode.Tab))
+            if (Input.GetKeyDown(unlockCursorKey))
                 _isCursorLocked = false;
-            else if (Input.GetMouseButtonUp(0))
-            {
-                bool overUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
-                if (!overUI)
-                    _isCursorLocked = true;
-            }
+            else if (Input.GetKeyDown(KeyCode.Tab))
+                _isCursorLocked = !_isCursorLocked;
 
             if (_isCursorLocked)
             {

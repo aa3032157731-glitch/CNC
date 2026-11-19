@@ -40,7 +40,7 @@ namespace CNC.DigitalTwin
         [Header("Auto Tour Settings")]
         public float tourDwellSeconds = 8.5f;
 
-        public CameraViewMode CurrentViewMode { get; private set; } = CameraViewMode.BirdEyeOrbit;
+        public CameraViewMode CurrentViewMode { get; private set; } = CameraViewMode.FirstPersonWalk;
         public WorkshopHall CurrentHall { get; private set; } = WorkshopHall.SpinningHall;
         public bool IsRoofCutaway { get; private set; }
         public bool IsAutoTourPaused { get; private set; }
@@ -90,11 +90,20 @@ namespace CNC.DigitalTwin
                 _fpsRigidbody = fpsPlayerRoot.GetComponent<Rigidbody>();
                 if (fpsCameraAnchor == null && mainCamera != null && mainCamera.transform.IsChildOf(fpsPlayerRoot.transform))
                     fpsCameraAnchor = mainCamera.transform.parent;
+
+                // Crisp industrial hall walking speed (large 280m factory)
+                if (fpsController != null)
+                {
+                    fpsController.forwardSpeed = Mathf.Max(fpsController.forwardSpeed, 11f);
+                    fpsController.backwardSpeed = Mathf.Max(fpsController.backwardSpeed, 8f);
+                    fpsController.strafeSpeed = Mathf.Max(fpsController.strafeSpeed, 9f);
+                    fpsController.runSpeedMultiplier = Mathf.Max(fpsController.runSpeedMultiplier, 2.4f);
+                }
             }
 
             ApplySensitivity(AppLaunchContext.MouseSensitivity);
 
-            // Launch into requested view mode
+            // Launch into requested view mode (Default: FirstPersonWalk so WASD works immediately!)
             if (AppLaunchContext.InitialMode == AppMode.TeachingTour)
             {
                 SetViewMode(CameraViewMode.StationFocus);
@@ -164,7 +173,10 @@ namespace CNC.DigitalTwin
                 if (_fpsMovement != null) _fpsMovement.enabled = true;
                 AttachCameraToFps();
                 if (fpsController != null) fpsController.enabled = true;
-                if (fpsMouseLook != null) fpsMouseLook.SetCursorLock(true);
+                // Keep cursor free by default: WASD walks immediately + Right-Drag rotates view + Tab toggles locked FPS!
+                if (fpsMouseLook != null) fpsMouseLook.SetCursorLock(false);
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
             else
             {
@@ -466,17 +478,20 @@ namespace CNC.DigitalTwin
                 }
             }
 
-            // WASD gentle ground pan in BirdEyeOrbit mode
-            if (CurrentViewMode == CameraViewMode.BirdEyeOrbit)
+            // Smooth WASD + Q/E free movement works in BOTH BirdEyeOrbit AND StationFocus modes!
+            if (CurrentViewMode == CameraViewMode.BirdEyeOrbit || CurrentViewMode == CameraViewMode.StationFocus)
             {
                 float h = Input.GetAxis("Horizontal");
                 float v = Input.GetAxis("Vertical");
-                if (Mathf.Abs(h) > 0.01f || Mathf.Abs(v) > 0.01f)
+                float upDown = (Input.GetKey(KeyCode.E) ? 1f : 0f) - (Input.GetKey(KeyCode.Q) ? 1f : 0f);
+                if (Mathf.Abs(h) > 0.01f || Mathf.Abs(v) > 0.01f || Mathf.Abs(upDown) > 0.01f)
                 {
                     Vector3 right = mainCamera.transform.right;
                     Vector3 forward = Vector3.ProjectOnPlane(mainCamera.transform.forward, Vector3.up).normalized;
-                    float moveSpd = Mathf.Clamp(_targetDistance * 0.45f, 18f, 95f);
-                    _targetPivot += (right * h + forward * v) * (moveSpd * Time.unscaledDeltaTime);
+                    float shiftMult = Input.GetKey(KeyCode.LeftShift) ? 2.2f : 1.0f;
+                    float moveSpd = Mathf.Clamp(_targetDistance * 0.45f, 16f, 88f) * shiftMult;
+                    _targetPivot += (right * h + forward * v + Vector3.up * (upDown * 0.6f)) * (moveSpd * Time.unscaledDeltaTime);
+                    _targetPivot.y = Mathf.Clamp(_targetPivot.y, 1.5f, 55f);
                 }
             }
 
